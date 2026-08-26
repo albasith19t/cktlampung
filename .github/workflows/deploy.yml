@@ -22,7 +22,7 @@ jobs:
           server: ftpupload.net
           username: if0_42682625
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: htdocs/
+          server-dir: cktlampung.web.id/htdocs/
           exclude: |
             **/.git*
             **/.git*/**
