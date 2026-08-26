@@ -80,13 +80,16 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
       </div>
 
       <?php if ($isAdmin): ?>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button type="button" class="btn-primary" onclick="openModalBon()">
             <i class="bi bi-person-check-fill me-1"></i> Input Bon Teknisi
           </button>
           <button type="button" class="btn-secondary" onclick="openRestockModal()">
             <i class="bi bi-plus-circle me-1 text-success"></i> Restock Barang
           </button>
+          <a href="pengguna.php" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center;">
+            <i class="bi bi-people-fill me-1 text-primary"></i> Kelola Pengguna
+          </a>
         </div>
       <?php endif; ?>
     </div>
