@@ -48,12 +48,31 @@ function validateCsrfToken($token) {
 }
 
 // ---------------------------------------------------------
-// KONFIGURASI DATABASE MYSQL (Hosting / cPanel & XAMPP Support)
+// 1. BACA KONFIGURASI DARI FILE .env (JIKA ADA)
 // ---------------------------------------------------------
-$db_host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');    // Host MySQL
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $envLines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($envKey, $envVal) = explode('=', $line, 2);
+            $envKey = trim($envKey);
+            $envVal = trim($envVal, " \t\n\r\0\x0B\"'");
+            putenv("{$envKey}={$envVal}");
+            $_ENV[$envKey] = $envVal;
+        }
+    }
+}
+
+// ---------------------------------------------------------
+// 2. KONFIGURASI DATABASE MYSQL (Hosting / cPanel / InfinityFree / XAMPP)
+// ---------------------------------------------------------
+$db_host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');    // Host MySQL (misal: sql300.infinityfree.com)
 $db_port     = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '3306');         // Port MySQL
-$db_name     = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'cktlampung');   // Nama Database
-$db_user     = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');         // User MySQL
+$db_name     = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'cktlampung');   // Nama Database (misal: if0_42682625_cktlampung)
+$db_user     = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');         // User MySQL (misal: if0_42682625)
 $db_pass     = (getenv('DB_PASS') !== false) ? getenv('DB_PASS') : ($_ENV['DB_PASS'] ?? ''); // Password MySQL
 
 $pdo = null;
@@ -61,7 +80,7 @@ $active_driver = 'mysql';
 
 // Coba koneksi ke MySQL terlebih dahulu
 try {
-    // 1. Coba koneksi langsung ke database (Standar Hosting cPanel / InfinityFree / XAMPP)
+    // A. Coba koneksi langsung ke database yang ditentukan
     $pdo = new PDO("mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -73,7 +92,7 @@ try {
 
 } catch (Exception $e) {
     try {
-        // 2. Jika database belum dibuat di XAMPP lokal, buat otomatis
+        // B. Jika di XAMPP lokal dan database belum ada, buat otomatis
         $pdoServer = new PDO("mysql:host={$db_host};port={$db_port};charset=utf8mb4", $db_user, $db_pass, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -89,24 +108,85 @@ try {
         initMySQLDatabase($pdo);
 
     } catch (Exception $e2) {
-        // 3. Fallback ke SQLite jika MySQL offline
-    $dataDir = __DIR__ . '/../data';
-    if (!is_dir($dataDir)) {
-        mkdir($dataDir, 0777, true);
-    }
-    $sqlitePath = $dataDir . '/cktlampung.sqlite';
+        // C. Fallback ke SQLite jika ekstensi PDO SQLite tersedia (misal di lokal)
+        if (extension_loaded('pdo_sqlite')) {
+            $dataDir = __DIR__ . '/../data';
+            if (!is_dir($dataDir)) {
+                @mkdir($dataDir, 0777, true);
+            }
+            $sqlitePath = $dataDir . '/cktlampung.sqlite';
 
-    try {
-        $pdo = new PDO("sqlite:" . $sqlitePath, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]);
-        $pdo->exec("PRAGMA foreign_keys = ON;");
-        $active_driver = 'sqlite';
-        initSQLiteDatabase($pdo);
-    } catch (PDOException $sqle) {
-        die("Koneksi Database Gagal: " . $sqle->getMessage());
+            try {
+                $pdo = new PDO("sqlite:" . $sqlitePath, null, null, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                ]);
+                $pdo->exec("PRAGMA foreign_keys = ON;");
+                $active_driver = 'sqlite';
+                initSQLiteDatabase($pdo);
+            } catch (Exception $sqle) {
+                renderDatabaseSetupError($e->getMessage());
+            }
+        } else {
+            renderDatabaseSetupError($e->getMessage());
+        }
     }
+}
+
+/**
+ * Tampilkan Halaman Panduan Konfigurasi Database jika koneksi belum sesuai
+ */
+function renderDatabaseSetupError($errorMsg) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Konfigurasi Database - CKT Lampung</title>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+      <style>
+        body { background: #0b1329; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: #131f37; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; max-width: 580px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 50px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.8rem; font-weight: 700; margin-bottom: 16px; border: 1px solid rgba(245, 158, 11, 0.3); }
+        h1 { font-size: 1.4rem; font-weight: 800; margin: 0 0 10px; color: #38bdf8; }
+        p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin: 0 0 20px; }
+        .info-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { color: #64748b; }
+        .info-val { color: #f1f5f9; font-weight: 700; }
+        .steps { font-size: 0.84rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px; padding-left: 20px; }
+        .steps li { margin-bottom: 8px; }
+        .btn { display: block; text-align: center; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="badge">⚙️ Perlu Pengaturan Database Hosting</div>
+        <h1>Hubungkan Database MySQL</h1>
+        <p>Aplikasi web CKT Lampung sudah terpasang di hosting, namun detail koneksi database MySQL di server belum disesuaikan.</p>
+        
+        <div class="info-box">
+          <div class="info-row"><span class="info-label">Host Saat Ini:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_host']) ?></span></div>
+          <div class="info-row"><span class="info-label">Database:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_name']) ?></span></div>
+          <div class="info-row"><span class="info-label">User:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_user']) ?></span></div>
+        </div>
+
+        <ol class="steps">
+          <li>Buka menu <strong>MySQL Databases</strong> di dashboard InfinityFree / cPanel Anda.</li>
+          <li>Buat database baru (misal: <code>cktlampung</code>).</li>
+          <li>Catat <strong>MySQL Hostname</strong>, <strong>DB Name</strong>, dan <strong>DB Username</strong> yang diberikan.</li>
+          <li>Buat file <code>.env</code> di File Manager atau sesuaikan file <code>config/database.php</code> dengan data tersebut.</li>
+        </ol>
+
+        <a href="login.php" class="btn" onclick="location.reload(); return false;">🔄 Refresh Halaman Setelah Setting</a>
+      </div>
+    </body>
+    </html>
+    <?php
+    exit;
 }
 
 // ---------------------------------------------------------
