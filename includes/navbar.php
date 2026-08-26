@@ -92,6 +92,16 @@ $myActiveBonCount = $isTeknisi ? (int)$pdo->query("SELECT COUNT(*) FROM bon_requ
 
         <div class="dropdown-divider"></div>
 
+        <?php if ($isAdmin): ?>
+          <a href="pengguna.php" class="switch-user-item" style="color: var(--text-main);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-people text-primary"></i>
+              <span>Kelola Pengguna & Teknisi</span>
+            </div>
+          </a>
+          <div class="dropdown-divider"></div>
+        <?php endif; ?>
+
         <a href="logout.php" class="switch-user-item" style="color: var(--danger);">
           <div style="display: flex; align-items: center; gap: 8px;">
             <i class="bi bi-box-arrow-right"></i>

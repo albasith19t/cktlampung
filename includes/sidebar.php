@@ -70,6 +70,12 @@ $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
               <span>Laporan & Mutasi</span>
             </a>
           </li>
+          <li>
+            <a href="pengguna.php" class="sidebar-nav-item <?= ($currentScript === 'pengguna.php') ? 'active' : '' ?>">
+              <i class="bi bi-people-fill"></i>
+              <span>Manajemen Pengguna</span>
+            </a>
+          </li>
         </ul>
       </div>
 
