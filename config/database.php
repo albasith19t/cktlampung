@@ -61,27 +61,35 @@ $active_driver = 'mysql';
 
 // Coba koneksi ke MySQL terlebih dahulu
 try {
-    // 1. Koneksi ke server MySQL
-    $pdoServer = new PDO("mysql:host={$db_host};port={$db_port};charset=utf8mb4", $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT => 2
-    ]);
-
-    // Buat database cktlampung jika belum ada
-    $pdoServer->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
-    // 2. Koneksi ke database cktlampung
+    // 1. Coba koneksi langsung ke database (Standar Hosting cPanel / InfinityFree / XAMPP)
     $pdo = new PDO("mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 3
     ]);
     
     $active_driver = 'mysql';
     initMySQLDatabase($pdo);
 
 } catch (Exception $e) {
-    // Fallback ke SQLite jika MySQL XAMPP sedang tidak aktif
+    try {
+        // 2. Jika database belum dibuat di XAMPP lokal, buat otomatis
+        $pdoServer = new PDO("mysql:host={$db_host};port={$db_port};charset=utf8mb4", $db_user, $db_pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_TIMEOUT => 2
+        ]);
+        $pdoServer->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+        $pdo = new PDO("mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        $active_driver = 'mysql';
+        initMySQLDatabase($pdo);
+
+    } catch (Exception $e2) {
+        // 3. Fallback ke SQLite jika MySQL offline
     $dataDir = __DIR__ . '/../data';
     if (!is_dir($dataDir)) {
         mkdir($dataDir, 0777, true);

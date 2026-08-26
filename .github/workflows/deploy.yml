@@ -19,10 +19,10 @@ jobs:
       - name: 🚀 Upload File ke Server Hosting via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: ftpupload.net
+          username: if0_42682625
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_TARGET_DIR || 'htdocs/' }}
+          server-dir: htdocs/
           exclude: |
             **/.git*
             **/.git*/**
