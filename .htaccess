@@ -1,0 +1,44 @@
+# =========================================================
+# CKT Lampung - Apache Server Security Configuration
+# PT Cipta Karya Teknologi
+# =========================================================
+
+# 1. Disable Directory Indexing (Browsing)
+Options -Indexes
+
+# 2. Block Direct Access to Sensitive Files (.sql, .sqlite, .env, etc.)
+<FilesMatch "(?i)\.(sql|sqlite|sqlite3|db|env|log|bak|ini|sh|bat)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 3. Block Hidden Files (.git, .env, .htaccess, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 4. Block Direct Access to scratch/ directory
+RewriteEngine On
+RewriteRule ^scratch/ - [F,L]
+
+# 5. Security Headers (if mod_headers is enabled)
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 6. Default Charset UTF-8
+AddDefaultCharset UTF-8

@@ -1,0 +1,30 @@
+# Environments
+.env
+.env.local
+.env.*.local
+
+# Databases and Local Data
+data/*.sqlite
+data/*.sqlite3
+data/*.db
+data/*.db-journal
+
+# Internal Testing / Scratch directory
+scratch/
+
+# Logs and Temp
+*.log
+tmp/
+temp/
+
+# OS and IDE Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Node / Composer dependencies (if any in future)
+node_modules/
+vendor/
