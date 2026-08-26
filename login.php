@@ -105,14 +105,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Login - Sistem Gudang & Bon Material CKT Lampung</title>
   
-  <meta name="theme-color" content="#0284c7">
+  <meta name="theme-color" content="#0F4068">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="CKT Gudang">
+  <meta name="apple-mobile-web-app-title" content="Citratel Lampung">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="assets/img/logo-ckt.svg">
-  <link rel="icon" type="image/svg+xml" href="assets/img/logo-ckt.svg">
+  <link rel="apple-touch-icon" href="assets/img/logo-citratel-icon.png">
+  <link rel="icon" type="image/png" href="assets/img/logo-citratel-icon.png">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,51 +123,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body style="background: #0b1329;">
+<body style="background: #0F4068;">
 
 <div class="login-page-container">
   <!-- Left Side: Hero & System Presentation -->
   <div class="login-side-hero">
     <div>
-      <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); padding: 8px 16px; border-radius: var(--radius-full); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px;">
-        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></span>
-        <span style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px; color: #38bdf8;">SISTEM LOGISTIK & GUDANG FTTH</span>
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+        <img src="assets/img/logo-citratel-white.png" alt="Citratel" style="height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));">
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(185,210,231,0.12); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid rgba(185,210,231,0.25); margin-bottom: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+            <span style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; color: #B9D2E7;">SISTEM LOGISTIK & GUDANG FTTH</span>
+          </div>
+          <div style="font-size: 1.6rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; color: #ffffff;">
+            CITRATEL <span style="color: #B9D2E7;">LAMPUNG</span>
+          </div>
+        </div>
       </div>
       
-      <div style="font-size: 2.3rem; font-weight: 900; line-height: 1.2; letter-spacing: -0.8px; margin-bottom: 16px;">
-        PT CIPTA KARYA TEKNOLOGI
-        <span style="display: block; color: #38bdf8; font-size: 1.6rem; font-weight: 800; margin-top: 4px;">Wilayah Lampung</span>
+      <div style="font-size: 2.1rem; font-weight: 900; line-height: 1.2; letter-spacing: -0.8px; margin-bottom: 16px;">
+        PT CITRA TELKOMUNIKASI UTAMA
+        <span style="display: block; color: #B9D2E7; font-size: 1.5rem; font-weight: 800; margin-top: 4px;">Wilayah Lampung</span>
       </div>
       
-      <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; max-width: 480px; margin-bottom: 36px;">
+      <p style="color: #B9D2E7; opacity: 0.9; font-size: 0.95rem; line-height: 1.6; max-width: 480px; margin-bottom: 36px;">
         Platform terpadu pengelolaan stok material, monitoring ONT Besar & Kecil, roll kabel drop core 4 varian (150m, 100m, 75m, 50m), serta pencatatan serah terima bon material teknisi lapangan.
       </p>
 
       <!-- Key Highlight Points -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 500px;">
-        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 14px; border-radius: var(--radius-md);">
-          <i class="bi bi-shield-check text-primary" style="font-size: 1.4rem; display: block; margin-bottom: 6px;"></i>
-          <div style="font-weight: 800; font-size: 0.88rem;">Validasi Stok Real-time</div>
-          <div style="font-size: 0.75rem; color: #94a3b8;">Otomatis potong stok saat bon teknisi diterbitkan.</div>
+        <div style="background: rgba(185, 210, 231, 0.08); border: 1px solid rgba(185, 210, 231, 0.15); padding: 14px; border-radius: var(--radius-md);">
+          <i class="bi bi-shield-check" style="font-size: 1.4rem; display: block; margin-bottom: 6px; color: #B9D2E7;"></i>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #ffffff;">Validasi Stok Real-time</div>
+          <div style="font-size: 0.75rem; color: #B9D2E7; opacity: 0.85;">Otomatis potong stok saat bon teknisi diterbitkan.</div>
         </div>
-        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 14px; border-radius: var(--radius-md);">
-          <i class="bi bi-upc-scan text-primary" style="font-size: 1.4rem; display: block; margin-bottom: 6px;"></i>
-          <div style="font-weight: 800; font-size: 0.88rem;">Serial Number ONT</div>
-          <div style="font-size: 0.75rem; color: #94a3b8;">Pelacakan SN & MAC Address ONT modem pelanggan.</div>
+        <div style="background: rgba(185, 210, 231, 0.08); border: 1px solid rgba(185, 210, 231, 0.15); padding: 14px; border-radius: var(--radius-md);">
+          <i class="bi bi-upc-scan" style="font-size: 1.4rem; display: block; margin-bottom: 6px; color: #B9D2E7;"></i>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #ffffff;">Serial Number ONT</div>
+          <div style="font-size: 0.75rem; color: #B9D2E7; opacity: 0.85;">Pelacakan SN & MAC Address ONT modem pelanggan.</div>
         </div>
       </div>
     </div>
 
     <!-- Hero Footer -->
-    <div style="font-size: 0.78rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
-      &copy; <?= date('Y') ?> PT Cipta Karya Teknologi. Semua hak dilindungi.
+    <div style="font-size: 0.78rem; color: #B9D2E7; opacity: 0.75; border-top: 1px solid rgba(185,210,231,0.15); padding-top: 20px;">
+      &copy; <?= date('Y') ?> PT Citra Telkomunikasi Utama (Citratel). Semua hak dilindungi.
     </div>
   </div>
 
   <!-- Right Side: Login Form -->
   <div class="login-form-wrapper">
     <div style="text-align: center; margin-bottom: 28px;">
-      <img src="assets/img/logo-ckt.svg" alt="CKT Lampung" style="height: 52px; width: auto; margin-bottom: 12px;">
+      <img src="assets/img/logo-citratel-cropped.png" alt="Citratel" style="height: 80px; width: auto; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
       <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.4px;">Masuk ke Sistem</h2>
       <p style="font-size: 0.82rem; color: var(--text-muted);">Masukkan username dan password akun Anda</p>
     </div>

@@ -280,7 +280,7 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
 
                   <!-- Serial Number & Model -->
                   <td data-label="Perangkat ONT">
-                    <div style="font-weight: 800; font-family: var(--font-mono); font-size: 0.88rem; color: #0284c7;">
+                    <div style="font-weight: 800; font-family: var(--font-mono); font-size: 0.88rem; color: var(--primary);">
                       <?= htmlspecialchars($row['serial_number']) ?>
                     </div>
                     <div style="font-size: 0.76rem; color: var(--text-main); font-weight: 600; margin-top: 2px;">
@@ -328,7 +328,7 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
                     <?php endif; ?>
 
                     <?php if (!empty($row['installed_notes'])): ?>
-                      <div style="font-size: 0.74rem; margin-top: 4px; padding: 4px 8px; border-radius: 4px; background: <?= $isBad ? 'rgba(239, 68, 68, 0.08)' : ($isChange ? 'rgba(245, 158, 11, 0.08)' : 'rgba(2, 132, 199, 0.05)') ?>; color: <?= $isBad ? '#dc2626' : ($isChange ? '#d97706' : 'var(--text-muted)') ?>; font-weight: <?= ($isBad || $isChange) ? '600' : 'normal' ?>;">
+                      <div style="font-size: 0.74rem; margin-top: 4px; padding: 4px 8px; border-radius: 4px; background: <?= $isBad ? 'rgba(239, 68, 68, 0.08)' : ($isChange ? 'rgba(245, 158, 11, 0.08)' : 'rgba(15, 64, 104, 0.05)') ?>; color: <?= $isBad ? '#dc2626' : ($isChange ? '#d97706' : 'var(--text-muted)') ?>; font-weight: <?= ($isBad || $isChange) ? '600' : 'normal' ?>;">
                         <i class="bi <?= $isBad ? 'bi-exclamation-triangle-fill' : ($isChange ? 'bi-arrow-repeat' : 'bi-chat-left-text') ?> me-1"></i> <?= htmlspecialchars($row['installed_notes']) ?>
                       </div>
                     <?php endif; ?>
@@ -337,7 +337,7 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
                   <!-- Kabel Dipakai -->
                   <td data-label="Kabel Drop Core">
                     <?php if (!empty($row['cable_used'])): ?>
-                      <span class="badge font-mono" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; font-size: 0.74rem; font-weight: 700; border: 1px solid rgba(2, 132, 199, 0.25);">
+                      <span class="badge font-mono" style="background: var(--primary-light); color: var(--primary); font-size: 0.74rem; font-weight: 700; border: 1px solid var(--border-color);">
                         <i class="bi bi-bezier2 me-1"></i> <?= htmlspecialchars($row['cable_used']) ?>
                       </span>
                     <?php else: ?>

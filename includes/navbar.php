@@ -15,7 +15,7 @@ $myActiveBonCount = $isTeknisi ? (int)$pdo->query("SELECT COUNT(*) FROM bon_requ
     </button>
     <div class="topbar-breadcrumb">
       <h1 class="topbar-title"><?= htmlspecialchars($pageTitle ?? ($isTeknisi ? 'Tugas & Bon Saya' : 'Dashboard Gudang')) ?></h1>
-      <span class="topbar-subtitle">PT Cipta Karya Teknologi &bull; Wilayah Lampung</span>
+      <span class="topbar-subtitle">Citratel &bull; Wilayah Lampung</span>
     </div>
   </div>
 

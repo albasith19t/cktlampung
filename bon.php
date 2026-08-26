@@ -318,7 +318,7 @@ if ($detailId > 0) {
         </div>
 
         <div style="padding: 24px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; background-color: #f8fbfe; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; background: var(--neu-base); padding: 18px 22px; border-radius: var(--radius-md); box-shadow: var(--neu-inset-sm); border: 1px solid rgba(255, 255, 255, 0.8);">
             <div>
               <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Teknisi Penerima</div>
               <div style="font-weight: 700; color: var(--text-main);"><?= htmlspecialchars($selectedBon['technician_name']) ?></div>

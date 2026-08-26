@@ -1,17 +1,17 @@
 {
-  "name": "CKT Lampung - Sistem Gudang & Bon",
-  "short_name": "CKT Gudang",
-  "description": "Sistem Logistik & Bon Material PT Cipta Karya Teknologi Lampung",
+  "name": "Citratel Lampung - Sistem Gudang & Bon",
+  "short_name": "Citratel Gudang",
+  "description": "Sistem Logistik & Bon Material PT Citra Telkomunikasi Utama (Citratel) Lampung",
   "start_url": "index.php",
   "display": "standalone",
-  "background_color": "#0b1329",
-  "theme_color": "#0284c7",
+  "background_color": "#0F4068",
+  "theme_color": "#0F4068",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "assets/img/logo-ckt.svg",
+      "src": "assets/img/logo-citratel-icon.png",
       "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

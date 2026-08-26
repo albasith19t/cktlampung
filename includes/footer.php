@@ -426,7 +426,7 @@ $modalTechnicians = $pdo->query("SELECT id, name, nik FROM users WHERE role = 't
         icon: '<?= $fm['type'] ?? 'info' ?>',
         title: '<?= addslashes($fm['title'] ?? '') ?>',
         text: '<?= addslashes($fm['text'] ?? '') ?>',
-        confirmButtonColor: '#0284c7'
+        confirmButtonColor: '#0F4068'
       });
     });
   </script>

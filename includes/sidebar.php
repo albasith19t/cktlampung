@@ -11,8 +11,8 @@ $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
 <aside class="main-sidebar" id="mainSidebar">
   <!-- Sidebar Header & Brand Logo -->
   <div class="sidebar-header">
-    <a href="index.php" class="sidebar-brand-logo">
-      <img src="assets/img/logo-ckt.svg" alt="CKT Lampung Logo">
+    <a href="index.php" class="sidebar-brand-logo" title="Citratel Lampung">
+      <img src="assets/img/logo-citratel-white.svg" alt="Citratel Lampung Logo" style="height: 42px; width: auto; max-width: 200px;">
     </a>
   </div>
 

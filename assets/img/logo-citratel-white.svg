@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" width="320" height="90">
+  <!-- Hexagon Badge with Geometric Curved Icon -->
+  <g transform="translate(8, 6) scale(0.8)">
+    <!-- Hexagon Cyan Background -->
+    <polygon points="50,5 92,28 92,72 50,95 8,72 8,28" fill="#5bc2ea" stroke="#0a2c48" stroke-width="4" stroke-linejoin="round"/>
+    
+    <!-- Outer Orange Swoosh -->
+    <path d="M 38,92 C 30,55 35,28 72,12 C 78,14 84,18 84,20 C 52,32 46,58 54,92 Z" fill="#eb7324" stroke="#0a2c48" stroke-width="3" stroke-linejoin="round"/>
+    
+    <!-- Inner Orange Swoosh -->
+    <path d="M 48,92 C 40,60 46,36 82,20 C 88,22 94,26 94,28 C 62,40 56,64 64,92 Z" fill="#f07d2b" stroke="#0a2c48" stroke-width="3" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- CITRATEL Typography in White and #B9D2E7 for Dark Sidebar -->
+  <text x="96" y="52" font-family="'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="32" fill="#FFFFFF" letter-spacing="3">CITRATEL</text>
+  <text x="98" y="72" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="800" font-size="12" fill="#B9D2E7" letter-spacing="3.5">LAMPUNG</text>
+</svg>

@@ -128,12 +128,15 @@ if (!empty($reportBons)) {
     
     <!-- Printable Header (Visible Only When Printing) -->
     <div style="display: none;" class="print-only">
-      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
-        <h2 style="font-size: 16pt; margin: 0; text-transform: uppercase;">PT CIPTA KARYA TEKNOLOGI</h2>
-        <div style="font-size: 11pt; font-weight: 700;">DIVISI LOGISTIK & GUDANG FIBER OPTIC WILAYAH LAMPUNG</div>
-        <div style="font-size: 9pt; color: #555;">Jl. Raden Intan No. 45, Bandar Lampung &bull; Telp: (0721) 789011</div>
-        <div style="font-size: 10pt; font-weight: 700; margin-top: 8px;">
-          REKAPITULASI PENGELUARAN BON MATERIAL (Periode: <?= date('d/m/Y', strtotime($startDate)) ?> s/d <?= date('d/m/Y', strtotime($endDate)) ?>)
+      <div style="display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
+        <img src="assets/img/logo-citratel-cropped.png" alt="Citratel" style="height: 56px; width: auto;">
+        <div style="text-align: center;">
+          <h2 style="font-size: 15pt; margin: 0; text-transform: uppercase;">CITRATEL LAMPUNG</h2>
+          <div style="font-size: 10pt; font-weight: 700;">DIVISI LOGISTIK & GUDANG FIBER OPTIC WILAYAH LAMPUNG</div>
+          <div style="font-size: 8.5pt; color: #555;">Jl. Raden Intan No. 45, Bandar Lampung &bull; Telp: (0721) 789011</div>
+          <div style="font-size: 9.5pt; font-weight: 700; margin-top: 6px;">
+            REKAPITULASI PENGELUARAN BON MATERIAL (Periode: <?= date('d/m/Y', strtotime($startDate)) ?> s/d <?= date('d/m/Y', strtotime($endDate)) ?>)
+          </div>
         </div>
       </div>
     </div>

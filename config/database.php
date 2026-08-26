@@ -16,15 +16,17 @@ if (!headers_sent()) {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
-    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path' => '/',
-        'domain' => '',
-        'secure' => $isSecure,
-        'httponly' => true,
-        'samesite' => 'Lax'
-    ]);
+    if (!headers_sent()) {
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    }
     session_start();
 }
 
@@ -257,6 +259,12 @@ function initSQLiteDatabase($pdo) {
                 mac_address VARCHAR(100),
                 status VARCHAR(30) DEFAULT 'available',
                 bon_id INTEGER DEFAULT NULL,
+                customer_id VARCHAR(50) DEFAULT NULL,
+                customer_name VARCHAR(150) DEFAULT NULL,
+                customer_address TEXT DEFAULT NULL,
+                cable_used VARCHAR(150) DEFAULT NULL,
+                installed_notes TEXT DEFAULT NULL,
+                installed_at DATETIME DEFAULT NULL,
                 received_date DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS bon_requests (
@@ -316,6 +324,18 @@ function initSQLiteDatabase($pdo) {
             (7, 2, 'MAT-KBL-050', 'Kabel Drop Core 1 Core 3 Steel Wire (50 Meter)', 'V-Sol / Netlink', 'Pre-Connectorized SC/UPC', 50, 'Roll', 140, 35, 0);
         ");
     }
+    
+    // Auto-migrate material_serials columns for SQLite
+    try {
+        $cols = $pdo->query("PRAGMA table_info(material_serials)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('customer_name', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN customer_name VARCHAR(150)");
+        if (!in_array('customer_id', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN customer_id VARCHAR(50)");
+        if (!in_array('customer_address', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN customer_address TEXT");
+        if (!in_array('cable_used', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN cable_used VARCHAR(150)");
+        if (!in_array('installed_notes', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN installed_notes TEXT");
+        if (!in_array('installed_at', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN installed_at DATETIME");
+    } catch (Exception $e) {}
+
     seedDefaultAccounts($pdo);
 }
 

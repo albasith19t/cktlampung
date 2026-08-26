@@ -11,7 +11,7 @@
     <path d="M 48,92 C 40,60 46,36 82,20 C 88,22 94,26 94,28 C 62,40 56,64 64,92 Z" fill="#f07d2b" stroke="#0F4068" stroke-width="3" stroke-linejoin="round"/>
   </g>
   
-  <!-- CITRATEL Typography for Light Backgrounds -->
+  <!-- CITRATEL Typography for Light Backgrounds (#0F4068 and #295A82) -->
   <text x="96" y="52" font-family="'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="32" fill="#0F4068" letter-spacing="3">CITRATEL</text>
   <text x="98" y="72" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="800" font-size="12" fill="#295A82" letter-spacing="3.5">LAMPUNG</text>
 </svg>

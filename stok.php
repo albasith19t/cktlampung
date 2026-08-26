@@ -382,7 +382,7 @@ if ($activeTab === 'mutations') {
                 <?php foreach ($serials as $s): ?>
                   <tr>
                     <td data-label="Serial Number (SN)">
-                      <span class="font-mono" style="font-weight: 800; color: #0284c7; font-size: 0.9rem;">
+                      <span class="font-mono" style="font-weight: 800; color: var(--primary); font-size: 0.9rem;">
                         <?= htmlspecialchars($s['serial_number']) ?>
                       </span>
                     </td>

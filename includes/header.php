@@ -17,20 +17,20 @@ $stockAlertCount = getStockAlertCount($pdo);
   <title><?= $pageTitle ?? 'Sistem Gudang & Bon Material' ?> - CKT Lampung</title>
   
   <!-- Mobile & PWA Optimization -->
-  <meta name="theme-color" content="#0284c7">
+  <meta name="theme-color" content="#0F4068">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="CKT Gudang">
+  <meta name="apple-mobile-web-app-title" content="Citratel Lampung">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="assets/img/logo-ckt.svg">
+  <link rel="apple-touch-icon" href="assets/img/logo-citratel-icon.png">
 
   <!-- Primary Meta Tags for SEO & System Branding -->
-  <meta name="title" content="CKT Lampung - Sistem Gudang & Manajemen Material WiFi">
-  <meta name="description" content="Sistem Informasi Manajemen Logistik & Pengeluaran Bon Material PT Cipta Karya Teknologi Lampung. Monitoring stok ONT dan Kabel Drop Core (150m, 100m, 75m, 50m).">
+  <meta name="title" content="Citratel Lampung - Sistem Gudang & Manajemen Material WiFi">
+  <meta name="description" content="Sistem Informasi Manajemen Logistik & Pengeluaran Bon Material PT Citra Telkomunikasi Utama (Citratel) Lampung. Monitoring stok ONT dan Kabel Drop Core.">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="assets/img/logo-ckt.svg">
+  <link rel="icon" type="image/png" href="assets/img/logo-citratel-icon.png">
 
   <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

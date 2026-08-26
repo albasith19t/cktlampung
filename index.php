@@ -146,7 +146,7 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
           <span class="badge badge-cable">4 Varian Panjang</span>
         </div>
         <div class="stat-label">Kabel Drop Core FO</div>
-        <div class="stat-value" style="color: #0284c7;">
+        <div class="stat-value" style="color: var(--primary);">
           <?= $totalCablesRoll ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Roll</span>
         </div>
         <div class="stat-desc">
@@ -169,7 +169,7 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
             $percent = min(100, round(($c['stock_current'] / 150) * 100));
             $isLow = $c['stock_current'] <= $c['stock_min'];
           ?>
-            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">
                   Kabel Drop Core <?= $c['cable_length'] ?> Meter
@@ -181,8 +181,8 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
                   <?= $c['stock_current'] ?> Roll
                 </div>
               </div>
-              <div style="background-color: #e2e8f0; height: 8px; border-radius: var(--radius-full); overflow: hidden; margin-bottom: 6px;">
-                <div style="background: <?= $isLow ? 'var(--danger)' : 'linear-gradient(90deg, #0284c7, #38bdf8)' ?>; height: 100%; width: <?= $percent ?>%; border-radius: var(--radius-full); transition: width 0.4s ease;"></div>
+              <div style="background: #cbd5e1; height: 8px; border-radius: var(--radius-full); overflow: hidden; margin-bottom: 6px;">
+                <div style="background: <?= $isLow ? 'var(--danger)' : 'linear-gradient(90deg, #0F4068, #295A82)' ?>; height: 100%; width: <?= $percent ?>%; border-radius: var(--radius-full); transition: width 0.4s ease; box-shadow: 0 0 6px rgba(15, 64, 104, 0.4);"></div>
               </div>
               <div style="font-size: 0.72rem; color: var(--text-dim); text-align: right;">
                 Min: <?= $c['stock_min'] ?> Roll
@@ -219,8 +219,14 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
           <tbody>
             <?php if (empty($recentBons)): ?>
               <tr>
-                <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
-                  Belum ada surat bon yang diterbitkan.
+                <td colspan="6" style="text-align: center; padding: 42px 20px;">
+                  <div style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 1.4rem;">
+                      <i class="bi bi-inbox"></i>
+                    </div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.92rem;">Belum ada surat bon yang diterbitkan</div>
+                    <div style="font-size: 0.78rem; color: #64748b; max-width: 380px;">Gunakan tombol <strong>Input Bon Teknisi</strong> di bagian atas untuk mencatat pengeluaran material pertama ke teknisi.</div>
+                  </div>
                 </td>
               </tr>
             <?php else: ?>
