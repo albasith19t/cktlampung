@@ -1,10 +1,10 @@
 # =========================================================
-# CKT Lampung - Apache Server Security Configuration
+# CKT Lampung - Web Hosting Configuration (InfinityFree / cPanel)
 # PT Cipta Karya Teknologi
 # =========================================================
 
-# 1. Disable Directory Indexing (Browsing)
-Options -Indexes
+# 1. Set Default Index Page
+DirectoryIndex index.php index.html
 
 # 2. Block Direct Access to Sensitive Files (.sql, .sqlite, .env, etc.)
 <FilesMatch "(?i)\.(sql|sqlite|sqlite3|db|env|log|bak|ini|sh|bat)$">
@@ -17,22 +17,13 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# 3. Block Hidden Files (.git, .env, .htaccess, etc.)
-<FilesMatch "^\.">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
-</FilesMatch>
+# 3. Block Direct Access to scratch directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^scratch/ - [F,L]
+</IfModule>
 
-# 4. Block Direct Access to scratch/ directory
-RewriteEngine On
-RewriteRule ^scratch/ - [F,L]
-
-# 5. Security Headers (if mod_headers is enabled)
+# 4. Security Headers (if mod_headers is enabled)
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
@@ -40,5 +31,5 @@ RewriteRule ^scratch/ - [F,L]
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# 6. Default Charset UTF-8
+# 5. Default Charset UTF-8
 AddDefaultCharset UTF-8
