@@ -87,51 +87,59 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
       </div>
     </div>
 
-    <!-- KPI Cards Grid -->
-    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
-      <div class="kpi-card" style="border-left: 4px solid var(--primary);">
-        <div class="kpi-icon" style="background: rgba(2, 132, 199, 0.12); color: var(--primary);">
-          <i class="bi bi-people-fill"></i>
+    <!-- Stat KPI Cards Grid -->
+    <div class="stat-grid" style="margin-bottom: 24px;">
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon primary">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: var(--primary); font-weight: 700;">Total Akun</span>
         </div>
-        <div class="kpi-content">
-          <div class="kpi-label">TOTAL PENGGUNA</div>
-          <div class="kpi-val"><?= $totalUsers ?> <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Akun</span></div>
-        </div>
+        <div class="stat-label">Total Pengguna</div>
+        <div class="stat-value text-primary"><?= $totalUsers ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Akun</span></div>
+        <div class="stat-desc">Terdaftar di sistem gudang CKT</div>
       </div>
 
-      <div class="kpi-card" style="border-left: 4px solid #10b981;">
-        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
-          <i class="bi bi-tools"></i>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon success">
+            <i class="bi bi-tools"></i>
+          </div>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700;">Lapangan</span>
         </div>
-        <div class="kpi-content">
-          <div class="kpi-label">TEKNISI LAPANGAN</div>
-          <div class="kpi-val" style="color: #10b981;"><?= $totalTeknisi ?> <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Personel</span></div>
-        </div>
+        <div class="stat-label">Teknisi Lapangan</div>
+        <div class="stat-value" style="color: #10b981;"><?= $totalTeknisi ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Personel</span></div>
+        <div class="stat-desc">Dapat mengambil bon & lapor ONT</div>
       </div>
 
-      <div class="kpi-card" style="border-left: 4px solid #8b5cf6;">
-        <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
-          <i class="bi bi-shield-lock-fill"></i>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon ont">
+            <i class="bi bi-shield-lock-fill"></i>
+          </div>
+          <span class="badge" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6; font-weight: 700;">Gudang</span>
         </div>
-        <div class="kpi-content">
-          <div class="kpi-label">ADMIN GUDANG</div>
-          <div class="kpi-val" style="color: #8b5cf6;"><?= $totalAdmin ?> <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Akun</span></div>
-        </div>
+        <div class="stat-label">Admin Gudang</div>
+        <div class="stat-value" style="color: #8b5cf6;"><?= $totalAdmin ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Admin</span></div>
+        <div class="stat-desc">Akses penuh stok & penerbitan bon</div>
       </div>
 
-      <div class="kpi-card" style="border-left: 4px solid #0284c7;">
-        <div class="kpi-icon" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
-          <i class="bi bi-check-circle-fill"></i>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon primary">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700;">Aktif</span>
         </div>
-        <div class="kpi-content">
-          <div class="kpi-label">STATUS AKTIF</div>
-          <div class="kpi-val"><?= $totalActive ?> <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Akun Aktif</span></div>
-        </div>
+        <div class="stat-label">Status Akun Aktif</div>
+        <div class="stat-value"><?= $totalActive ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">User</span></div>
+        <div class="stat-desc">Dapat login ke sistem saat ini</div>
       </div>
     </div>
 
     <!-- Filter & Search Toolbar -->
-    <div class="panel-card" style="margin-bottom: 20px; padding: 16px 20px;">
+    <div style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
       <form method="GET" action="pengguna.php" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 240px; position: relative;">
           <input type="text" name="search" class="form-control" placeholder="Cari nama, username, NIK, divisi..." value="<?= htmlspecialchars($searchFilter) ?>" style="padding-left: 36px;">
@@ -167,8 +175,8 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
     </div>
 
     <!-- Users Table Card -->
-    <div class="panel-card" style="padding: 0; overflow: hidden;">
-      <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+    <div style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
+      <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #fafbfc;">
         <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">
           <i class="bi bi-people text-primary me-2"></i> Daftar Pengguna Sistem (<?= count($userList) ?>)
         </div>
@@ -222,7 +230,7 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
                     </div>
                   </td>
                   <td>
-                    <span class="badge font-mono" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 600;">
+                    <span class="badge font-mono" style="background: rgba(0,0,0,0.04); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 600;">
                       @<?= htmlspecialchars($u['username'] ?: '-') ?>
                     </span>
                   </td>
@@ -270,7 +278,7 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
                       <button 
                         type="button" 
                         class="btn-icon-action" 
-                        onclick="openEditUserModal(<?= htmlspecialchars(json_encode($u)) ?>)" 
+                        onclick='openEditUserModal(<?= json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)' 
                         title="Edit Data Pengguna"
                         style="color: var(--primary);"
                       >
@@ -455,7 +463,8 @@ function openAddUserModal() {
   document.getElementById('passwordHelp').style.display = 'none';
   document.getElementById('userStatusSelect').value = 'active';
 
-  document.getElementById('userModal').classList.add('active');
+  const modal = document.getElementById('userModal');
+  modal.classList.add('show');
 }
 
 function openEditUserModal(user) {
@@ -464,32 +473,56 @@ function openEditUserModal(user) {
   document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-pencil-square text-primary"></i> Edit Data Pengguna';
   document.getElementById('btnSubmitUser').innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Perubahan';
 
-  document.getElementById('userNameInput').value = user.name;
+  document.getElementById('userNameInput').value = user.name || '';
   document.getElementById('userUsernameInput').value = user.username || '';
-  document.getElementById('userNikInput').value = user.nik;
-  document.getElementById('userRoleSelect').value = user.role;
+  document.getElementById('userNikInput').value = user.nik || '';
+  document.getElementById('userRoleSelect').value = user.role || 'teknisi';
   document.getElementById('userDeptInput').value = user.department || 'Teknis & Jaringan';
   document.getElementById('userPasswordInput').value = '';
   document.getElementById('userPasswordInput').required = false;
   document.getElementById('passwordHelp').style.display = 'block';
   document.getElementById('userStatusSelect').value = user.status || 'active';
 
-  document.getElementById('userModal').classList.add('active');
+  const modal = document.getElementById('userModal');
+  modal.classList.add('show');
 }
 
 function closeUserModal() {
-  document.getElementById('userModal').classList.remove('active');
+  const modal = document.getElementById('userModal');
+  modal.classList.remove('show');
 }
 
 function openResetPasswordModal(userId, userName) {
   document.getElementById('resetUserId').value = userId;
   document.getElementById('resetUserName').innerText = userName;
-  document.getElementById('resetModal').classList.add('active');
+  const modal = document.getElementById('resetModal');
+  modal.classList.add('show');
 }
 
 function closeResetPasswordModal() {
-  document.getElementById('resetModal').classList.remove('active');
+  const modal = document.getElementById('resetModal');
+  modal.classList.remove('show');
 }
+
+// Tutup modal jika klik di luar area dialog
+window.addEventListener('click', function(e) {
+  const userModal = document.getElementById('userModal');
+  const resetModal = document.getElementById('resetModal');
+  if (e.target === userModal) {
+    closeUserModal();
+  }
+  if (e.target === resetModal) {
+    closeResetPasswordModal();
+  }
+});
+
+// Tutup modal jika tekan tombol ESC
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeUserModal();
+    closeResetPasswordModal();
+  }
+});
 
 function confirmDeleteUser(userId, userName, bonCount) {
   let warningText = `Apakah Anda yakin ingin menghapus akun '${userName}'?`;
