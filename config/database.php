@@ -428,12 +428,22 @@ function initSQLiteDatabase($pdo) {
 }
 
 // ---------------------------------------------------------
-// SEED 1 ADMIN & 5 TEKNISI
+// SEED 1 ADMIN & 5 TEKNISI (Hanya saat inisialisasi awal)
 // ---------------------------------------------------------
 function seedDefaultAccounts($pdo) {
-    // Password hash:
+    try {
+        // Jika data pengguna sudah ada, jangan pernah overwrite perubahan nama/data yang dibuat admin!
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        if ($count > 0) {
+            return;
+        }
+    } catch (Exception $e) {
+        return;
+    }
+
+    // Password hash default:
     // admin => admin123
-    // teknisi (budi, rian, zaki, dimas, bayu) => 123456 (also support admin123)
+    // teknisi (budi, rian, zaki, dimas, bayu) => 123456 (support admin123 juga)
     $hashAdmin = '$2y$10$whcawmpgeUj2MYXIbBMT2OIJdxGTFh6.XZuWxkUH9kZitRgzr0/2G'; // admin123
     $hashTeknisi = '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi'; // 123456
 
@@ -446,18 +456,11 @@ function seedDefaultAccounts($pdo) {
         ['bayu', $hashTeknisi, 'CKT-TEK-005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan']
     ];
 
-    $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE username = ? OR nik = ?");
     $stmtInsert = $pdo->prepare("INSERT INTO users (username, password, nik, name, role, department) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmtUpdate = $pdo->prepare("UPDATE users SET username = ?, password = ?, name = ?, department = ? WHERE nik = ?");
-
     foreach ($defaultUsers as $u) {
-        $stmtCheck->execute([$u[0], $u[2]]);
-        $existing = $stmtCheck->fetch();
-        if (!$existing) {
+        try {
             $stmtInsert->execute($u);
-        } else {
-            $stmtUpdate->execute([$u[0], $u[1], $u[3], $u[5], $u[2]]);
-        }
+        } catch (Exception $e) {}
     }
 }
 
