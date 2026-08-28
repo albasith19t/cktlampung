@@ -220,6 +220,17 @@ $lowStockItems = $pdo->query("
       </div>
       <div style="padding: 22px;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px;">
+          <!-- Quick Card: Scan Barcode Kamera -->
+          <a href="javascript:void(0)" onclick="triggerUniversalScanner()" style="display: flex; align-items: center; gap: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(3, 105, 161, 0.04) 100%); border: 1px solid rgba(2, 132, 199, 0.35); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(2,132,199,0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(2,132,199,0.4);">
+              <i class="bi bi-camera-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.92rem; color: #0284c7;">Scan Barcode ONT</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Scan kamera HP / Web scanner</div>
+            </div>
+          </a>
+
           <!-- Link 1: Stok ONT -->
           <a href="stok.php?tab=ont" style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 6px 16px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
             <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(2, 132, 199, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">

@@ -152,6 +152,9 @@ if ($activeTab === 'mutasi') {
       </div>
 
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn-primary" onclick="triggerUniversalScanner()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
+          <i class="bi bi-camera-fill me-1"></i> Scan Barcode ONT
+        </button>
         <button type="button" class="btn-primary" onclick="openAddOntModal()">
           <i class="bi bi-plus-circle-fill me-1"></i> Tambah SN ONT Baru
         </button>

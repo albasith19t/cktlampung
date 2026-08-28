@@ -318,6 +318,19 @@ if ($detailId > 0) {
   <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
   <main class="content-body">
+    <!-- Quick Scan Barcode Hero Button for Mobile & Desktop -->
+    <div style="margin-bottom: 18px;">
+      <button 
+        type="button" 
+        class="btn-primary" 
+        style="width: 100%; min-height: 50px; font-size: 0.98rem; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); border: none; cursor: pointer;"
+        onclick="triggerUniversalScanner()"
+      >
+        <i class="bi bi-camera-fill" style="font-size: 1.3rem;"></i>
+        <span>📷 SCAN BARCODE MODEM ONT (KAMERA HP)</span>
+      </button>
+    </div>
+
     <!-- Header Controls -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
       <div>

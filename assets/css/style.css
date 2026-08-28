@@ -1718,6 +1718,46 @@ a:hover {
     box-shadow: 0 0 8px #10b981;
   }
 
+  /* Center Elevated Floating Scan Button */
+  .mobile-nav-scan-btn {
+    position: relative;
+    top: -14px;
+    flex: 1.1;
+  }
+
+  .scan-fab-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.65);
+    border: 3px solid #0F4068;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  }
+
+  .mobile-nav-scan-btn:active .scan-fab-icon {
+    transform: scale(0.88);
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
+  }
+
+  .scan-fab-icon i {
+    font-size: 1.45rem !important;
+    color: #ffffff !important;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+  }
+
+  .mobile-nav-scan-btn span {
+    font-weight: 800 !important;
+    font-size: 0.7rem !important;
+    color: #38bdf8 !important;
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
   .mobile-nav-badge {
     position: absolute;
     top: 6px;

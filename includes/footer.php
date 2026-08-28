@@ -486,16 +486,21 @@ $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
         <span class="mobile-nav-badge"><?= $stockAlertCount ?></span>
       <?php endif; ?>
     </a>
+    
+    <!-- Central Elevated Scan Button -->
+    <a href="javascript:void(0)" onclick="triggerUniversalScanner()" class="mobile-nav-item mobile-nav-scan-btn" title="Scan Barcode Kamera">
+      <div class="scan-fab-icon">
+        <i class="bi bi-camera-fill"></i>
+      </div>
+      <span>Scan SN</span>
+    </a>
+
     <a href="bon.php" class="mobile-nav-item <?= ($currentScript === 'bon.php') ? 'active' : '' ?>">
       <i class="bi bi-file-earmark-text-fill"></i>
       <span>Bon</span>
       <?php if (($pendingBonCount ?? 0) > 0): ?>
         <span class="mobile-nav-badge"><?= $pendingBonCount ?></span>
       <?php endif; ?>
-    </a>
-    <a href="laporan.php" class="mobile-nav-item <?= ($currentScript === 'laporan.php') ? 'active' : '' ?>">
-      <i class="bi bi-bar-chart-line-fill"></i>
-      <span>Laporan</span>
     </a>
     <a href="javascript:void(0)" onclick="document.getElementById('mainSidebar').classList.toggle('show-mobile')" class="mobile-nav-item">
       <i class="bi bi-list"></i>
@@ -504,17 +509,27 @@ $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
   <?php else: 
     $myActiveCount = (int)$pdo->query("SELECT COUNT(*) FROM bon_requests WHERE user_id = " . (int)$currentUser['id'] . " AND status = 'approved'")->fetchColumn();
   ?>
-    <a href="bon.php" class="mobile-nav-item active">
+    <a href="bon.php" class="mobile-nav-item <?= ($currentScript === 'bon.php') ? 'active' : '' ?>">
       <i class="bi bi-card-checklist"></i>
       <span>Tugas Saya</span>
       <?php if ($myActiveCount > 0): ?>
         <span class="mobile-nav-badge"><?= $myActiveCount ?></span>
       <?php endif; ?>
     </a>
-    <a href="javascript:void(0)" onclick="location.reload()" class="mobile-nav-item">
-      <i class="bi bi-arrow-clockwise"></i>
-      <span>Segarkan</span>
+
+    <!-- Central Elevated Scan Button -->
+    <a href="javascript:void(0)" onclick="triggerUniversalScanner()" class="mobile-nav-item mobile-nav-scan-btn" title="Scan Barcode Kamera">
+      <div class="scan-fab-icon">
+        <i class="bi bi-camera-fill"></i>
+      </div>
+      <span>Scan SN</span>
     </a>
+
+    <a href="riwayat.php" class="mobile-nav-item <?= ($currentScript === 'riwayat.php') ? 'active' : '' ?>">
+      <i class="bi bi-clock-history"></i>
+      <span>Riwayat</span>
+    </a>
+
     <a href="logout.php" class="mobile-nav-item" style="color: #ef4444;">
       <i class="bi bi-power"></i>
       <span>Keluar</span>
@@ -765,6 +780,63 @@ window.closeBarcodeScannerModal = function() {
     modal.classList.remove('show');
     document.body.style.overflow = 'auto';
   }
+};
+
+/* Universal Scanner Handler for Mobile Bottom Nav & Header Buttons */
+window.triggerUniversalScanner = function() {
+  openBarcodeScanner((scannedSN) => {
+    // 1. If we are on bon.php and there is a matching ONT item button
+    const allButtons = document.querySelectorAll('button[onclick*="openInstallSNModal"]');
+    let matched = false;
+    allButtons.forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(scannedSN)) {
+        matched = true;
+        btn.click();
+      }
+    });
+
+    if (matched) return;
+
+    // 2. If on stok.php and in add ONT modal
+    const ta = document.getElementById('inputNewSerials');
+    if (ta && document.getElementById('addOntModal') && document.getElementById('addOntModal').classList.contains('show')) {
+      ta.value = ta.value ? ta.value + '\n' + scannedSN : scannedSN;
+      const qtyInput = document.getElementById('modalOntQty');
+      if (qtyInput) {
+        const lines = ta.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0);
+        qtyInput.value = lines.length;
+      }
+      return;
+    }
+
+    // 3. Otherwise, show interactive action popup
+    Swal.fire({
+      title: 'Barcode Berhasil Di-Scan!',
+      html: `
+        <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 10px; padding: 12px; margin: 12px 0;">
+          <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Serial Number (SN):</div>
+          <div style="font-family: var(--font-mono, monospace); font-size: 1.25rem; font-weight: 800; color: #0284c7; margin-top: 4px;">
+            ${scannedSN}
+          </div>
+        </div>
+        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Pilih tindakan untuk Serial Number ini:</p>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '<i class="bi bi-search me-1"></i> Cari di Stok',
+      denyButtonText: '<i class="bi bi-clock-history me-1"></i> Cari di Riwayat',
+      cancelButtonText: 'Tutup',
+      confirmButtonColor: '#0F4068',
+      denyButtonColor: '#0284c7'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = 'stok.php?tab=ont&search=' + encodeURIComponent(scannedSN);
+      } else if (result.isDenied) {
+        window.location.href = 'riwayat.php?search=' + encodeURIComponent(scannedSN);
+      }
+    });
+  });
 };
 </script>
 
