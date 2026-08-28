@@ -243,9 +243,9 @@ if ($activeTab === 'mutasi') {
           <div style="min-width: 190px;">
             <select name="status" class="form-select" onchange="this.form.submit()">
               <option value="">-- Semua Status Lokasi --</option>
-              <option value="gudang" <?= ($ontStatusFilter === 'gudang') ? 'selected' : '' ?>>📦 Stok Gudang (Siap)</option>
-              <option value="teknisi" <?= ($ontStatusFilter === 'teknisi') ? 'selected' : '' ?>>🚚 Dibawa Teknisi</option>
-              <option value="installed" <?= ($ontStatusFilter === 'installed') ? 'selected' : '' ?>>🏠 Terpasang di Pelanggan</option>
+              <option value="gudang" <?= ($ontStatusFilter === 'gudang') ? 'selected' : '' ?>>📦 Stok Gudang</option>
+              <option value="teknisi" <?= ($ontStatusFilter === 'teknisi') ? 'selected' : '' ?>>🚚 Di Teknisi</option>
+              <option value="installed" <?= ($ontStatusFilter === 'installed') ? 'selected' : '' ?>>🏠 Terpasang</option>
               <option value="bad" <?= ($ontStatusFilter === 'bad') ? 'selected' : '' ?>>⚠️ Unit Rusak / Bad</option>
             </select>
           </div>
@@ -344,11 +344,11 @@ if ($activeTab === 'mutasi') {
                         </span>
                       <?php elseif ($isTeknisi): ?>
                         <span class="badge" style="background: rgba(245, 158, 11, 0.14); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
-                          <i class="bi bi-person-walking me-1"></i> Dibawa Teknisi <?= htmlspecialchars($sn['technician_name'] ?: 'Teknisi') ?>
+                          <i class="bi bi-person-fill me-1"></i> <?= htmlspecialchars($sn['technician_name'] ?: 'Teknisi') ?>
                         </span>
                       <?php elseif ($isInstalled): ?>
                         <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: var(--primary); border: 1px solid rgba(2, 132, 199, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
-                          <i class="bi bi-house-check-fill me-1"></i> Terpasang di Pelanggan
+                          <i class="bi bi-check2-circle me-1"></i> Terpasang
                         </span>
                       <?php elseif ($isBad): ?>
                         <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
