@@ -1569,50 +1569,59 @@ a:hover {
     padding: 14px 16px;
   }
 
-  /* Transform table into mobile cards */
+  /* Transform table into mobile cards (Both custom-table and data-table) */
   .mobile-cards-view .custom-table,
-  .mobile-cards-view .custom-table thead,
-  .mobile-cards-view .custom-table tbody,
-  .mobile-cards-view .custom-table th,
-  .mobile-cards-view .custom-table td,
-  .mobile-cards-view .custom-table tr {
-    display: block;
+  .mobile-cards-view .data-table,
+  .mobile-cards-view thead,
+  .mobile-cards-view tbody,
+  .mobile-cards-view th,
+  .mobile-cards-view td,
+  .mobile-cards-view tr {
+    display: block !important;
   }
 
-  .mobile-cards-view .custom-table thead {
-    display: none;
+  .mobile-cards-view thead {
+    display: none !important;
   }
 
-  .mobile-cards-view .custom-table tbody tr {
+  .mobile-cards-view tbody tr {
     margin-bottom: 14px;
-    background: var(--neu-surface);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(203, 213, 225, 0.85);
     border-radius: var(--radius-md);
     padding: 16px;
-    box-shadow: var(--neu-raised-sm);
+    box-shadow: 0 2px 8px rgba(15, 64, 104, 0.05);
+    transition: transform 0.15s ease;
   }
 
-  .mobile-cards-view .custom-table tbody td {
-    display: flex;
+  .mobile-cards-view tbody tr:active {
+    transform: scale(0.99);
+  }
+
+  .mobile-cards-view tbody td {
+    display: flex !important;
     justify-content: space-between;
     align-items: center;
-    padding: 9px 0;
-    border-bottom: 1px solid rgba(192, 204, 221, 0.3);
+    padding: 9px 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
     font-size: 0.86rem;
+    gap: 12px;
+    text-align: right;
   }
 
-  .mobile-cards-view .custom-table tbody td:last-child {
-    border-bottom: none;
-    padding-top: 12px;
+  .mobile-cards-view tbody td:last-child {
+    border-bottom: none !important;
+    padding-top: 12px !important;
   }
 
-  .mobile-cards-view .custom-table tbody td::before {
+  .mobile-cards-view tbody td::before {
     content: attr(data-label);
     font-weight: 800;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-right: 12px;
+    letter-spacing: 0.5px;
+    text-align: left;
     flex-shrink: 0;
   }
 
@@ -1652,14 +1661,14 @@ a:hover {
     right: 0;
     height: calc(64px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: rgba(15, 64, 104, 0.95);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-top: 1px solid rgba(185, 210, 231, 0.2);
+    background: rgba(15, 64, 104, 0.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(185, 210, 231, 0.25);
     z-index: 1500;
     align-items: center;
     justify-content: space-around;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.35);
   }
 
   .mobile-nav-item {
@@ -1674,34 +1683,52 @@ a:hover {
     font-size: 0.72rem;
     font-weight: 600;
     gap: 4px;
-    transition: color 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
   }
 
+  .mobile-nav-item:active {
+    transform: scale(0.92);
+  }
+
   .mobile-nav-item i {
-    font-size: 1.25rem;
+    font-size: 1.28rem;
+    transition: transform 0.2s ease;
   }
 
   .mobile-nav-item.active {
     color: #FFFFFF;
-    font-weight: 700;
+    font-weight: 800;
   }
 
   .mobile-nav-item.active i {
     color: #FFFFFF;
-    filter: drop-shadow(0 0 6px rgba(185, 210, 231, 0.8));
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px rgba(185, 210, 231, 0.9));
+  }
+
+  .mobile-nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+    width: 20px;
+    height: 3px;
+    border-radius: 3px;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
   }
 
   .mobile-nav-badge {
     position: absolute;
     top: 6px;
     right: calc(50% - 16px);
-    background-color: var(--danger);
+    background-color: #ef4444;
     color: #fff;
     font-size: 0.62rem;
     font-weight: 800;
-    padding: 1px 5px;
+    padding: 1px 6px;
     border-radius: var(--radius-full);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.4);
   }
 }

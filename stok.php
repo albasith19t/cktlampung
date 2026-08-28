@@ -232,7 +232,7 @@ if ($activeTab === 'mutasi') {
           <span style="font-size: 0.8rem; color: var(--text-dim);">Menampilkan unit terverifikasi</span>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-responsive mobile-cards-view">
           <table class="data-table">
             <thead>
               <tr>
@@ -258,8 +258,8 @@ if ($activeTab === 'mutasi') {
                   $isBad = ($sn['status'] === 'bad');
                 ?>
                   <tr>
-                    <td style="color: var(--text-dim); font-size: 0.82rem;"><?= $idx + 1 ?></td>
-                    <td>
+                    <td data-label="No" style="color: var(--text-dim); font-size: 0.82rem;"><?= $idx + 1 ?></td>
+                    <td data-label="Serial Number (SN)">
                       <div style="display: flex; align-items: center; gap: 10px;">
                         <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1.1rem; border-radius: 8px; background: rgba(2, 132, 199, 0.08); color: var(--primary);">
                           <i class="bi bi-upc-scan"></i>
@@ -276,7 +276,7 @@ if ($activeTab === 'mutasi') {
                         </div>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Merek & Tipe ONT">
                       <div style="font-weight: 700; color: var(--text-main); font-size: 0.88rem;">
                         <?= htmlspecialchars($sn['material_name']) ?>
                       </div>
@@ -284,7 +284,7 @@ if ($activeTab === 'mutasi') {
                         <?= htmlspecialchars($sn['material_brand'] ?: 'ZTE / Huawei / Fiberhome') ?> &bull; <?= htmlspecialchars($sn['material_model'] ?: '-') ?>
                       </small>
                     </td>
-                    <td>
+                    <td data-label="Status & Lokasi">
                       <?php if ($isGudang): ?>
                         <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
                           <i class="bi bi-box-seam-fill me-1"></i> Stok Gudang
@@ -362,11 +362,11 @@ if ($activeTab === 'mutasi') {
           <span style="font-size: 0.8rem; color: var(--text-dim);">Total: <?= $totalCablesRoll ?> Roll</span>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-responsive mobile-cards-view">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Ukuran & Spesifikasi Kabel</th>
+                <th>Nama Material Drop Core</th>
                 <th>Kategori</th>
                 <th style="width: 260px;">Ketersediaan Stok Fisik</th>
                 <th style="text-align: right;">Aksi</th>
@@ -377,18 +377,18 @@ if ($activeTab === 'mutasi') {
                 $isLow = ($c['stock_current'] <= $c['stock_min']);
               ?>
                 <tr>
-                  <td>
+                  <td data-label="Nama Material">
                     <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">
                       <?= htmlspecialchars($c['name']) ?>
                     </div>
                     <small style="color: var(--text-dim);"><?= htmlspecialchars($c['brand'] ?: 'V-Sol / Netlink') ?> &bull; <?= htmlspecialchars($c['model_type'] ?: 'Pre-Connectorized') ?></small>
                   </td>
-                  <td>
+                  <td data-label="Kategori">
                     <span class="badge" style="background: rgba(2, 132, 199, 0.1); color: var(--primary); font-weight: 700;">
                       <i class="bi bi-bezier2 me-1"></i> Kabel <?= $c['cable_length'] ?>M
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Ketersediaan Stok">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                       <span style="font-size: 1.05rem; font-weight: 800; font-family: var(--font-mono); color: <?= $isLow ? 'var(--danger)' : 'var(--text-main)' ?>;">
                         <?= $c['stock_current'] ?> <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);"><?= $c['unit'] ?></span>
@@ -403,7 +403,7 @@ if ($activeTab === 'mutasi') {
                       <div style="background: <?= $isLow ? '#ef4444' : 'var(--primary)' ?>; height: 100%; width: <?= min(100, round(($c['stock_current'] / max(1, $c['stock_min'] * 3)) * 100)) ?>%;"></div>
                     </div>
                   </td>
-                  <td style="text-align: right;">
+                  <td data-label="Aksi" style="text-align: right;">
                     <div style="display: inline-flex; gap: 6px;">
                       <button type="button" class="btn-icon-action" onclick="openRestockModal(<?= $c['id'] ?>)" title="Restock Kabel Ini" style="color: var(--success);">
                         <i class="bi bi-plus-circle"></i>
