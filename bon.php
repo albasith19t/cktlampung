@@ -243,6 +243,67 @@ if ($detailId > 0) {
                 ];
             }
         }
+
+        // Process active items for view (if technician, finished ONTs and used cables disappear!)
+        $activeBonItems = [];
+        $activeOntCount = 0;
+        $activeKabelCount = 0;
+
+        foreach ($selectedBonItems as $item) {
+            $qty = (int)($item['quantity_approved'] ?: $item['quantity_requested']);
+            $isSerialized = ($item['is_serialized'] == 1 || !empty($item['serial_numbers']) || stripos($item['mat_name'], 'ONT') !== false);
+            
+            if ($isSerialized) {
+                $allSerials = getSerialsForItem($pdo, $selectedBon['id'], $item['material_id'], $item['serial_numbers'], $qty, $item['mat_code']);
+                $item['all_serials'] = $allSerials;
+                
+                if ($isTeknisi) {
+                    $pendingSerials = array_values(array_filter($allSerials, fn($s) => !in_array($s['status'], ['installed', 'bad', 'change'])));
+                    $item['display_serials'] = $pendingSerials;
+                    $item['display_qty'] = count($pendingSerials);
+                    if (!empty($pendingSerials)) {
+                        $activeBonItems[] = $item;
+                        $activeOntCount++;
+                    }
+                } else {
+                    $item['display_serials'] = $allSerials;
+                    $item['display_qty'] = $qty;
+                    $activeBonItems[] = $item;
+                    $activeOntCount++;
+                }
+            } else {
+                // Kabel / Non-serial
+                $cableLen = (int)($item['cable_length'] ?: 0);
+                $usedCount = 0;
+                if (!empty($allBonSerials)) {
+                    foreach ($allBonSerials as $bs) {
+                        if ($bs['status'] === 'installed' && !empty($bs['cable_used'])) {
+                            if ($cableLen > 0 && strpos($bs['cable_used'], (string)$cableLen) !== false) {
+                                $usedCount++;
+                            } elseif ($cableLen === 0 && strpos($bs['cable_used'], $item['mat_name']) !== false) {
+                                $usedCount++;
+                            }
+                        }
+                    }
+                }
+                $remaining = max(0, $qty - $usedCount);
+                $item['used_count'] = $usedCount;
+                $item['remaining_qty'] = $remaining;
+                $item['display_qty'] = $isTeknisi ? $remaining : $qty;
+
+                if ($isTeknisi) {
+                    if ($remaining > 0) {
+                        $activeBonItems[] = $item;
+                        $activeKabelCount++;
+                    }
+                } else {
+                    $activeBonItems[] = $item;
+                    $activeKabelCount++;
+                }
+            }
+        }
+
+        $isBonAllFinished = ($isTeknisi && empty($activeBonItems));
     }
 }
 ?>
@@ -332,17 +393,20 @@ if ($detailId > 0) {
           </div>
 
           <!-- Items Table in this Bon -->
-          <?php
-            $ontCount = 0;
-            $kabelCount = 0;
-            foreach ($selectedBonItems as $it) {
-                if ($it['is_serialized'] == 1 || !empty($it['serial_numbers']) || stripos($it['mat_name'], 'ONT') !== false) {
-                    $ontCount++;
-                } else {
-                    $kabelCount++;
-                }
-            }
-          ?>
+          <?php if ($isBonAllFinished): ?>
+            <div style="background: #ffffff; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-lg); padding: 48px 24px; text-align: center; box-shadow: var(--shadow-sm); margin: 10px 0 20px;">
+              <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #10b981; display: inline-flex; align-items: center; justify-content: center; font-size: 2.4rem; margin-bottom: 18px;">
+                <i class="bi bi-check2-circle"></i>
+              </div>
+              <h2 style="font-weight: 800; font-size: 1.35rem; color: var(--text-main); margin-bottom: 8px;">Semua Tugas Selesai!</h2>
+              <p style="color: var(--text-muted); font-size: 0.92rem; max-width: 540px; margin: 0 auto 24px; line-height: 1.6;">
+                Seluruh unit ONT dan kabel pada surat bon <strong style="color: var(--primary); font-family: var(--font-mono);"><?= htmlspecialchars($selectedBon['bon_number']) ?></strong> telah berhasil dilaporkan terpasang. Seluruh data pekerjaan Anda sudah langsung tercatat rapi di menu <strong>Riwayat Pemasangan</strong>.
+              </p>
+              <a href="riwayat.php" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 12px 26px; font-weight: 700; border-radius: 8px; font-size: 0.95rem;">
+                <i class="bi bi-clock-history"></i> Buka Riwayat Pemasangan Saya &rarr;
+              </a>
+            </div>
+          <?php else: ?>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <!-- 2 Pilihan Kategori Material (Tab Filter) -->
@@ -354,7 +418,7 @@ if ($detailId > 0) {
                 onclick="switchMaterialCategory('all')"
                 style="padding: 7px 16px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; border: 1px solid var(--primary); background: var(--primary); color: #ffffff; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
               >
-                <i class="bi bi-grid-fill"></i> Semua Material (<?= count($selectedBonItems) ?>)
+                <i class="bi bi-grid-fill"></i> Semua Material (<?= count($activeBonItems) ?>)
               </button>
               <button 
                 type="button" 
@@ -363,7 +427,7 @@ if ($detailId > 0) {
                 onclick="switchMaterialCategory('ont')"
                 style="padding: 7px 16px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
               >
-                <i class="bi bi-router text-primary"></i> ONT & Modem Wi-Fi (<?= $ontCount ?>)
+                <i class="bi bi-router text-primary"></i> ONT & Modem Wi-Fi (<?= $activeOntCount ?>)
               </button>
               <button 
                 type="button" 
@@ -372,7 +436,7 @@ if ($detailId > 0) {
                 onclick="switchMaterialCategory('kabel')"
                 style="padding: 7px 16px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
               >
-                <i class="bi bi-bezier2 text-primary"></i> Kabel Drop Core (<?= $kabelCount ?>)
+                <i class="bi bi-bezier2 text-primary"></i> Kabel Drop Core (<?= $activeKabelCount ?>)
               </button>
             </div>
 
@@ -394,27 +458,25 @@ if ($detailId > 0) {
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($selectedBonItems as $item): 
-                  $qty = (int)($item['quantity_approved'] ?: $item['quantity_requested']);
+                <?php foreach ($activeBonItems as $item): 
+                  $qty = (int)($item['display_qty'] ?? ($item['quantity_approved'] ?: $item['quantity_requested']));
                   $isSerialized = ($item['is_serialized'] == 1 || !empty($item['serial_numbers']) || stripos($item['mat_name'], 'ONT') !== false);
                   $itemCat = $isSerialized ? 'ont' : 'kabel';
-                  $itemSerials = [];
-                  if ($isSerialized) {
-                      $itemSerials = getSerialsForItem($pdo, $selectedBon['id'], $item['material_id'], $item['serial_numbers'], $qty, $item['mat_code']);
-                  }
+                  $itemSerials = $item['display_serials'] ?? [];
                 ?>
                   <tr class="bon-item-row-entry" data-item-category="<?= $itemCat ?>">
                     <td style="font-family: var(--font-mono); color: var(--text-dim);"><?= htmlspecialchars($item['mat_code']) ?></td>
                     <td style="font-weight: 700; color: var(--text-main);">
                       <?= htmlspecialchars($item['mat_name']) ?>
-                      <?php if ($isSerialized && !empty($itemSerials)): 
-                        $reportedCount = count(array_filter($itemSerials, fn($s) => in_array($s['status'], ['installed', 'bad', 'change'])));
-                        $installedCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'installed'));
-                        $badCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'bad'));
-                        $changeCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'change'));
+                      <?php if ($isSerialized && !empty($item['all_serials'])): 
+                        $allS = $item['all_serials'];
+                        $reportedCount = count(array_filter($allS, fn($s) => in_array($s['status'], ['installed', 'bad', 'change'])));
+                        $installedCount = count(array_filter($allS, fn($s) => $s['status'] === 'installed'));
+                        $badCount = count(array_filter($allS, fn($s) => $s['status'] === 'bad'));
+                        $changeCount = count(array_filter($allS, fn($s) => $s['status'] === 'change'));
                       ?>
                         <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-top: 3px;">
-                          Progress: <strong style="color: <?= $reportedCount === count($itemSerials) ? '#10b981' : '#d97706' ?>;"><?= $reportedCount ?>/<?= count($itemSerials) ?> Unit Dilaporkan</strong>
+                          Progress: <strong style="color: <?= $reportedCount === count($allS) ? '#10b981' : '#d97706' ?>;"><?= $reportedCount ?>/<?= count($allS) ?> Unit Selesai</strong>
                           <span style="font-size: 0.7rem; color: var(--text-dim);">(<?= $installedCount ?> Terpasang<?= $badCount ? ", $badCount Bad" : "" ?><?= $changeCount ? ", $changeCount Change" : "" ?>)</span>
                         </div>
                       <?php endif; ?>
@@ -424,6 +486,9 @@ if ($detailId > 0) {
                     </td>
                     <td style="text-align: center; font-weight: 800; font-family: var(--font-mono); color: var(--success);">
                       <?= $qty ?> <?= $item['unit'] ?>
+                      <?php if ($isTeknisi): ?>
+                        <span style="font-size: 0.7rem; color: var(--text-dim); display: block; font-weight: 600;">Sisa di Tas</span>
+                      <?php endif; ?>
                     </td>
                     <td>
                       <?php if ($isSerialized && !empty($itemSerials)): ?>
@@ -523,37 +588,10 @@ if ($detailId > 0) {
                             <?php endif; ?>
                           <?php endforeach; ?>
                         </div>
-                      <?php elseif ($item['cable_length']): 
-                        $cableLen = (int)$item['cable_length'];
-                        $matchingInstalled = [];
-                        if (!empty($allBonSerials)) {
-                            foreach ($allBonSerials as $bs) {
-                                if ($bs['status'] === 'installed' && !empty($bs['cable_used'])) {
-                                    if (strpos($bs['cable_used'], (string)$cableLen) !== false) {
-                                        $matchingInstalled[] = $bs;
-                                    }
-                                }
-                            }
-                        }
-                      ?>
-                        <?php if (!empty($matchingInstalled)): ?>
-                          <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="font-size: 0.74rem; font-weight: 700; color: #047857; display: flex; align-items: center; gap: 4px;">
-                              <i class="bi bi-check-circle-fill text-success"></i> <?= count($matchingInstalled) ?> Unit Terpakai untuk ONT:
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 3px;">
-                              <?php foreach ($matchingInstalled as $mi): ?>
-                                <div style="font-size: 0.72rem; color: var(--text-main); background: rgba(16, 185, 129, 0.08); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                                  <strong class="font-mono text-primary">SN: <?= htmlspecialchars($mi['serial_number']) ?></strong> &bull; <?= htmlspecialchars($mi['customer_name'] ?: 'Pelanggan') ?>
-                                </div>
-                              <?php endforeach; ?>
-                            </div>
-                          </div>
-                        <?php else: ?>
-                          <span class="badge" style="background: rgba(217, 119, 6, 0.1); color: #d97706; font-size: 0.72rem; font-weight: 600; border: 1px dashed rgba(217, 119, 6, 0.3);">
-                            <i class="bi bi-hourglass-split me-1"></i> Belum Terpakai di Lapangan
-                          </span>
-                        <?php endif; ?>
+                      <?php elseif ($item['cable_length']): ?>
+                        <div style="font-size: 0.8rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
+                          <i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel Tersedia di Tas (Siap Dipasang)
+                        </div>
                       <?php elseif ($item['serial_numbers']): ?>
                         <span class="badge font-mono" style="background: rgba(2, 132, 199, 0.1); color: var(--primary); border: 1px solid rgba(2, 132, 199, 0.25); padding: 4px 8px;">
                           SN: <?= htmlspecialchars($item['serial_numbers']) ?>
@@ -570,14 +608,11 @@ if ($detailId > 0) {
 
           <!-- Mobile Card-Based View (Screens <= 768px) -->
           <div class="bon-items-mobile-view">
-            <?php foreach ($selectedBonItems as $item): 
-              $qty = (int)($item['quantity_approved'] ?: $item['quantity_requested']);
+            <?php foreach ($activeBonItems as $item): 
+              $qty = (int)($item['display_qty'] ?? ($item['quantity_approved'] ?: $item['quantity_requested']));
               $isSerialized = ($item['is_serialized'] == 1 || !empty($item['serial_numbers']) || stripos($item['mat_name'], 'ONT') !== false);
               $itemCat = $isSerialized ? 'ont' : 'kabel';
-              $itemSerials = [];
-              if ($isSerialized) {
-                  $itemSerials = getSerialsForItem($pdo, $selectedBon['id'], $item['material_id'], $item['serial_numbers'], $qty, $item['mat_code']);
-              }
+              $itemSerials = $item['display_serials'] ?? [];
             ?>
               <div class="bon-item-row-entry" data-item-category="<?= $itemCat ?>" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
@@ -599,17 +634,7 @@ if ($detailId > 0) {
                 <?php endif; ?>
 
                 <!-- Unit SN Section on Mobile -->
-                <?php if ($isSerialized && !empty($itemSerials)): 
-                  $reportedCount = count(array_filter($itemSerials, fn($s) => in_array($s['status'], ['installed', 'bad', 'change'])));
-                  $installedCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'installed'));
-                  $badCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'bad'));
-                  $changeCount = count(array_filter($itemSerials, fn($s) => $s['status'] === 'change'));
-                ?>
-                  <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                    <span>Unit ONT (<?= count($itemSerials) ?> Unit):</span>
-                    <strong style="color: <?= $reportedCount === count($itemSerials) ? '#10b981' : '#d97706' ?>;"><?= $reportedCount ?>/<?= count($itemSerials) ?> Dilaporkan</strong>
-                  </div>
-
+                <?php if ($isSerialized && !empty($itemSerials)): ?>
                   <div style="display: flex; flex-direction: column; gap: 10px;">
                     <?php foreach ($itemSerials as $sn): ?>
                       <?php if ($sn['status'] === 'installed'): ?>
@@ -624,20 +649,7 @@ if ($detailId > 0) {
                           </div>
                           <div style="font-size: 0.84rem; color: var(--text-main); font-weight: 700; margin-top: 4px;">
                             <i class="bi bi-person-check-fill text-success me-1"></i> <?= htmlspecialchars($sn['customer_name'] ?: 'Pelanggan') ?>
-                            <?php if (!empty($sn['customer_id'])): ?>
-                              <span style="color: var(--text-dim); font-size: 0.74rem;">(<?= htmlspecialchars($sn['customer_id']) ?>)</span>
-                            <?php endif; ?>
                           </div>
-                          <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
-                            <i class="bi bi-geo-alt-fill text-dim me-1"></i> <?= htmlspecialchars($sn['customer_address'] ?: '-') ?>
-                          </div>
-                          <?php if (!empty($sn['cable_used'])): ?>
-                            <div style="margin-top: 6px;">
-                              <span class="badge font-mono" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-size: 0.74rem; font-weight: 700; border: 1px solid rgba(2, 132, 199, 0.25);">
-                                <i class="bi bi-bezier2 me-1"></i> <?= htmlspecialchars($sn['cable_used']) ?>
-                              </span>
-                            </div>
-                          <?php endif; ?>
                         </div>
                       <?php elseif ($sn['status'] === 'bad'): ?>
                         <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px;">
@@ -649,30 +661,6 @@ if ($detailId > 0) {
                               <i class="bi bi-x-circle-fill"></i> Bad
                             </span>
                           </div>
-                          <?php if (!empty($sn['installed_notes'])): ?>
-                            <div style="font-size: 0.8rem; color: #dc2626; font-weight: 700; margin-top: 4px;">
-                              <i class="bi bi-exclamation-triangle-fill me-1"></i> Kendala: <?= htmlspecialchars($sn['installed_notes']) ?>
-                            </div>
-                          <?php endif; ?>
-                        </div>
-                      <?php elseif ($sn['status'] === 'change'): ?>
-                        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px;">
-                            <span class="badge font-mono" style="background: #f59e0b; color: #fff; font-weight: 700; font-size: 0.78rem; padding: 4px 8px;">
-                              <i class="bi bi-arrow-repeat me-1"></i> SN: <?= htmlspecialchars($sn['serial_number']) ?>
-                            </span>
-                            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #d97706; font-size: 0.7rem; font-weight: 700;">
-                              <i class="bi bi-arrow-repeat"></i> Change
-                            </span>
-                          </div>
-                          <div style="font-size: 0.84rem; color: var(--text-main); font-weight: 700; margin-top: 4px;">
-                            <i class="bi bi-person-check-fill text-warning me-1"></i> <?= htmlspecialchars($sn['customer_name'] ?: 'Pelanggan') ?>
-                          </div>
-                          <?php if (!empty($sn['installed_notes'])): ?>
-                            <div style="font-size: 0.76rem; color: #d97706; margin-top: 2px; font-weight: 600;">
-                              <i class="bi bi-info-circle-fill me-1"></i> Alasan: <?= htmlspecialchars($sn['installed_notes']) ?>
-                            </div>
-                          <?php endif; ?>
                         </div>
                       <?php else: ?>
                         <div style="background: rgba(2, 132, 199, 0.05); border: 1px dashed rgba(2, 132, 199, 0.35); border-radius: 8px; padding: 12px;">
@@ -696,35 +684,10 @@ if ($detailId > 0) {
                       <?php endif; ?>
                     <?php endforeach; ?>
                   </div>
-                <?php elseif ($item['cable_length']): 
-                  $cableLen = (int)$item['cable_length'];
-                  $matchingInstalled = [];
-                  if (!empty($allBonSerials)) {
-                      foreach ($allBonSerials as $bs) {
-                          if ($bs['status'] === 'installed' && !empty($bs['cable_used'])) {
-                              if (strpos($bs['cable_used'], (string)$cableLen) !== false) {
-                                  $matchingInstalled[] = $bs;
-                              }
-                          }
-                      }
-                  }
-                ?>
-                  <?php if (!empty($matchingInstalled)): ?>
-                    <div style="background: rgba(16, 185, 129, 0.08); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                      <div style="font-size: 0.76rem; font-weight: 700; color: #047857; margin-bottom: 4px;">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i> <?= count($matchingInstalled) ?> Unit Terpakai untuk ONT:
-                      </div>
-                      <?php foreach ($matchingInstalled as $mi): ?>
-                        <div style="font-size: 0.74rem; color: var(--text-main); margin-top: 2px;">
-                          <strong class="font-mono text-primary">SN: <?= htmlspecialchars($mi['serial_number']) ?></strong> (<?= htmlspecialchars($mi['customer_name'] ?: 'Pelanggan') ?>)
-                        </div>
-                      <?php endforeach; ?>
-                    </div>
-                  <?php else: ?>
-                    <div style="font-size: 0.76rem; color: #d97706; background: rgba(217, 119, 6, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px dashed rgba(217, 119, 6, 0.3);">
-                      <i class="bi bi-hourglass-split me-1"></i> Belum Terpakai di Lapangan
-                    </div>
-                  <?php endif; ?>
+                <?php elseif ($item['cable_length']): ?>
+                  <div style="font-size: 0.78rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
+                    <i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel di Tas (Siap Dipasang)
+                  </div>
                 <?php else: ?>
                   <div style="font-size: 0.76rem; color: var(--text-dim);">
                     - (Material Non-SN)
@@ -733,6 +696,8 @@ if ($detailId > 0) {
               </div>
             <?php endforeach; ?>
           </div>
+
+          <?php endif; ?>
 
           <?php if (!empty($selectedBon['admin_notes'])): ?>
             <div style="background-color: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
