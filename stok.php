@@ -349,11 +349,9 @@ if ($activeTab === 'mutasi') {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Kode</th>
                 <th>Ukuran & Spesifikasi Kabel</th>
                 <th>Kategori</th>
                 <th style="width: 260px;">Ketersediaan Stok Fisik</th>
-                <th>Lokasi Rak</th>
                 <th style="text-align: right;">Aksi</th>
               </tr>
             </thead>
@@ -362,11 +360,6 @@ if ($activeTab === 'mutasi') {
                 $isLow = ($c['stock_current'] <= $c['stock_min']);
               ?>
                 <tr>
-                  <td>
-                    <span class="font-mono" style="font-weight: 700; color: var(--primary);">
-                      <?= htmlspecialchars($c['code']) ?>
-                    </span>
-                  </td>
                   <td>
                     <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">
                       <?= htmlspecialchars($c['name']) ?>
@@ -392,9 +385,6 @@ if ($activeTab === 'mutasi') {
                     <div style="background-color: #f1f5f9; height: 6px; border-radius: var(--radius-full); overflow: hidden;">
                       <div style="background: <?= $isLow ? '#ef4444' : 'var(--primary)' ?>; height: 100%; width: <?= min(100, round(($c['stock_current'] / max(1, $c['stock_min'] * 3)) * 100)) ?>%;"></div>
                     </div>
-                  </td>
-                  <td style="color: var(--text-muted); font-size: 0.85rem;">
-                    <?= htmlspecialchars($c['location_rack'] ?: 'Rak B') ?>
                   </td>
                   <td style="text-align: right;">
                     <div style="display: inline-flex; gap: 6px;">
