@@ -290,15 +290,12 @@ if ($activeTab === 'mutasi') {
                 <th>Serial Number (SN) & MAC</th>
                 <th>Merek & Tipe ONT</th>
                 <th>Status & Lokasi Unit</th>
-                <th>Surat Bon / Teknisi</th>
-                <th>Tanggal Masuk</th>
-                <th style="text-align: right; width: 100px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($ontList)): ?>
                 <tr>
-                  <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
                     <i class="bi bi-search" style="font-size: 2.2rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
                     Tidak ada Serial Number ONT yang cocok dengan pencarian / filter Anda.
                   </td>
@@ -359,32 +356,6 @@ if ($activeTab === 'mutasi') {
                           <?= htmlspecialchars(ucfirst($sn['status'])) ?>
                         </span>
                       <?php endif; ?>
-                    </td>
-                    <td>
-                      <?php if (!empty($sn['bon_number'])): ?>
-                        <a href="bon.php?search=<?= urlencode($sn['bon_number']) ?>" class="badge font-mono" style="background: rgba(2, 132, 199, 0.08); color: var(--primary); text-decoration: none; border: 1px solid rgba(2, 132, 199, 0.2);">
-                          <i class="bi bi-receipt me-1"></i> <?= htmlspecialchars($sn['bon_number']) ?>
-                        </a>
-                        <?php if (!empty($sn['technician_name'])): ?>
-                          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;">
-                            Teknisi: <strong><?= htmlspecialchars($sn['technician_name']) ?></strong>
-                          </div>
-                        <?php endif; ?>
-                      <?php else: ?>
-                        <span style="color: var(--text-dim); font-size: 0.8rem;">Gudang Utama (Rak A)</span>
-                      <?php endif; ?>
-                    </td>
-                    <td style="color: var(--text-muted); font-size: 0.82rem;">
-                      <?= formatTanggalSingkat($sn['received_date'] ?: $sn['created_at']) ?>
-                    </td>
-                    <td style="text-align: right;">
-                      <div style="display: inline-flex; gap: 6px;">
-                        <?php if ($isGudang): ?>
-                          <button type="button" class="btn-icon-action" onclick="openModalBon(<?= $sn['material_id'] ?>, '<?= htmlspecialchars(addslashes($sn['serial_number'])) ?>')" title="Keluarkan ke Bon Teknisi" style="color: var(--primary);">
-                            <i class="bi bi-send-fill"></i>
-                          </button>
-                        <?php endif; ?>
-                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
