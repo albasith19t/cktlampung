@@ -178,57 +178,7 @@ if ($activeTab === 'mutasi') {
          TAB 1: STOK ONT & SERIAL NUMBER
          ========================================================= -->
     <?php if ($activeTab === 'ont'): ?>
-      
-      <!-- KPI Stats Grid for ONT -->
-      <div class="stat-grid" style="margin-bottom: 24px;">
-        <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon primary">
-              <i class="bi bi-router"></i>
-            </div>
-            <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: var(--primary); font-weight: 700;">Total Unit</span>
-          </div>
-          <div class="stat-label">Total Unit ONT</div>
-          <div class="stat-value text-primary"><?= $totalOntAll ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div class="stat-desc">Seluruh ONT terdaftar di database</div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon success">
-              <i class="bi bi-box-seam-fill"></i>
-            </div>
-            <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700;">Siap Pakai</span>
-          </div>
-          <div class="stat-label">Stok di Gudang</div>
-          <div class="stat-value" style="color: #10b981;"><?= $totalOntGudang ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div class="stat-desc">Tersedia di rak gudang siap dipasang</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon warning">
-              <i class="bi bi-tools"></i>
-            </div>
-            <span class="badge" style="background: rgba(245, 158, 11, 0.12); color: var(--warning); font-weight: 700;">Di Lapangan</span>
-          </div>
-          <div class="stat-label">Dibawa Teknisi</div>
-          <div class="stat-value" style="color: #f59e0b;"><?= $totalOntTeknisi ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div class="stat-desc">Sedang dibawa teknisi via surat bon</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-top">
-            <div class="stat-icon ont">
-              <i class="bi bi-patch-check-fill"></i>
-            </div>
-            <span class="badge" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6; font-weight: 700;">Pelanggan</span>
-          </div>
-          <div class="stat-label">Selesai</div>
-          <div class="stat-value" style="color: #8b5cf6;"><?= $totalOntInstalled ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div class="stat-desc">Sudah aktif di rumah pelanggan</div>
-        </div>
-      </div>
 
       <!-- Filter & Search Toolbar -->
       <div style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
