@@ -41,6 +41,9 @@ $totalBonCount = (int)$pdo->query("SELECT COUNT(*) FROM bon_requests")->fetchCol
 $bonActiveCount = (int)$pdo->query("SELECT COUNT(*) FROM bon_requests WHERE status = 'approved'")->fetchColumn();
 $bonCompletedCount = (int)$pdo->query("SELECT COUNT(*) FROM bon_requests WHERE status = 'completed'")->fetchColumn();
 
+// Technicians Count
+$totalTeknisi = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'teknisi' AND status = 'active'")->fetchColumn();
+
 // Low Stock Alert Materials
 $lowStockItems = $pdo->query("
     SELECT m.*, c.name as category_name 
@@ -49,18 +52,6 @@ $lowStockItems = $pdo->query("
     WHERE m.stock_current <= m.stock_min 
     ORDER BY m.stock_current ASC
 ")->fetchAll();
-
-// Recent Bon Requests (Last 6)
-$recentBonSql = "
-    SELECT b.*, u.name as technician_name, u.nik as technician_nik
-    FROM bon_requests b
-    JOIN users u ON b.user_id = u.id
-";
-if ($isTeknisi) {
-    $recentBonSql .= " WHERE b.user_id = " . (int)$currentUser['id'];
-}
-$recentBonSql .= " ORDER BY b.created_at DESC LIMIT 6";
-$recentBons = $pdo->query($recentBonSql)->fetchAll();
 
 ?>
 
@@ -75,7 +66,7 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
           <?= $isTeknisi ? 'Selamat Datang, ' . htmlspecialchars($currentUser['name']) : 'Dashboard Operasional Gudang CKT' ?>
         </div>
         <div class="page-title-subheading">
-          <?= $isTeknisi ? 'Lihat status material yang Anda bawa dan konfirmasi penyelesaian pemasangan di lokasi pelanggan.' : 'Ringkasan stok barang, alokasi ONT, roll kabel drop core, dan penerbitan bon teknisi.' ?>
+          <?= $isTeknisi ? 'Lihat status material yang Anda bawa dan konfirmasi penyelesaian pemasangan di lokasi pelanggan.' : 'Monitoring stok real-time, ketersediaan kabel drop core, ONT, dan manajemen logistik lapangan.' ?>
         </div>
       </div>
 
@@ -96,7 +87,7 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
 
     <!-- Low Stock Alert Banner (If Any) -->
     <?php if (!empty($lowStockItems)): ?>
-      <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; backdrop-filter: blur(10px);">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--danger-bg); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
             <i class="bi bi-exclamation-triangle-fill"></i>
@@ -114,14 +105,14 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
             </div>
           </div>
         </div>
-        <a href="stok.php?filter=kritis" class="btn-secondary" style="font-size: 0.78rem; padding: 6px 14px; border-color: rgba(239, 68, 68, 0.3); color: var(--danger);">
-          <i class="bi bi-arrow-right-circle me-1"></i> Periksa Stok Kritis
+        <a href="stok.php?tab=kabel" class="btn-secondary" style="font-size: 0.78rem; padding: 6px 14px; border-color: rgba(239, 68, 68, 0.3); color: var(--danger);">
+          <i class="bi bi-arrow-right-circle me-1"></i> Periksa Stok
         </a>
       </div>
     <?php endif; ?>
 
-    <!-- Stat KPI Cards Grid -->
-    <div class="stat-grid">
+    <!-- Stat KPI Cards Grid (3 Columns) -->
+    <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
       <!-- ONT Stock Card -->
       <div class="stat-card">
         <div class="stat-card-top">
@@ -156,6 +147,23 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
           150M, 100M, 75M, 50M siap digunakan
         </div>
       </div>
+
+      <!-- Technician Team Card -->
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon success">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700;">Tim Lapangan</span>
+        </div>
+        <div class="stat-label">Teknisi Lapangan</div>
+        <div class="stat-value" style="color: #10b981;">
+          <?= $totalTeknisi ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Personel</span>
+        </div>
+        <div class="stat-desc">
+          <span><strong><?= $bonActiveCount ?></strong> Surat Bon aktif di lapangan</span>
+        </div>
+      </div>
     </div>
 
     <!-- Cable 4 Varian Progress Card -->
@@ -164,31 +172,34 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
         <div class="table-card-title">
           <i class="bi bi-bezier2 text-primary"></i> Ketersediaan Roll Kabel Drop Core
         </div>
-        <a href="stok.php?cat=CAT-KBL" style="font-size: 0.78rem; font-weight: 700;">Lihat Detail &rarr;</a>
+        <a href="stok.php?tab=kabel" style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">Lihat Detail Stok &rarr;</a>
       </div>
-      <div style="padding: 20px;">
+      <div style="padding: 22px;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
           <?php foreach ($cableStats as $c): 
             $percent = min(100, round(($c['stock_current'] / 150) * 100));
             $isLow = $c['stock_current'] <= $c['stock_min'];
           ?>
-            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 1px 3px rgba(15,23,42,0.04)';">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">
                   Kabel Drop Core <?= $c['cable_length'] ?> Meter
                   <?php if ($isLow): ?>
                     <span class="badge" style="background: var(--danger-bg); color: var(--danger); font-size: 0.68rem; margin-left: 6px;">Stok Kritis</span>
                   <?php endif; ?>
                 </div>
-                <div style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: <?= $isLow ? 'var(--danger)' : 'var(--primary)' ?>;">
+                <div style="font-family: var(--font-mono); font-weight: 800; font-size: 0.95rem; color: <?= $isLow ? 'var(--danger)' : 'var(--primary)' ?>;">
                   <?= $c['stock_current'] ?> Roll
                 </div>
               </div>
-              <div style="background: #cbd5e1; height: 8px; border-radius: var(--radius-full); overflow: hidden; margin-bottom: 6px;">
-                <div style="background: <?= $isLow ? 'var(--danger)' : 'linear-gradient(90deg, #0F4068, #295A82)' ?>; height: 100%; width: <?= $percent ?>%; border-radius: var(--radius-full); transition: width 0.4s ease; box-shadow: 0 0 6px rgba(15, 64, 104, 0.4);"></div>
+              <div style="background: #cbd5e1; height: 8px; border-radius: var(--radius-full); overflow: hidden; margin-bottom: 8px;">
+                <div style="background: <?= $isLow ? '#ef4444' : 'linear-gradient(90deg, #0F4068, #295A82)' ?>; height: 100%; width: <?= $percent ?>%; border-radius: var(--radius-full); transition: width 0.4s ease; box-shadow: 0 0 6px rgba(15, 64, 104, 0.3);"></div>
               </div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); text-align: right;">
-                Min: <?= $c['stock_min'] ?> Roll
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: var(--text-dim);">
+                <span>Batas Min: <strong><?= $c['stock_min'] ?> Roll</strong></span>
+                <span style="color: <?= $isLow ? 'var(--danger)' : 'var(--success)' ?>; font-weight: 700;">
+                  <?= $isLow ? '⚠️ Perlu Restock' : '✅ Aman' ?>
+                </span>
               </div>
             </div>
           <?php endforeach; ?>
@@ -196,100 +207,64 @@ $recentBons = $pdo->query($recentBonSql)->fetchAll();
       </div>
     </div>
 
-    <!-- Recent Bon Table -->
+    <!-- Quick Access Navigation Hub -->
     <div class="table-card">
       <div class="table-card-header">
         <div class="table-card-title">
-          <i class="bi bi-clock-history text-primary"></i> <?= $isTeknisi ? 'Surat Bon Terbaru Saya' : 'Surat Bon Pengeluaran Material Terbaru' ?>
+          <i class="bi bi-grid-fill text-primary"></i> Modul Operasional & Akses Cepat
         </div>
-        <a href="bon.php" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
-          Buka Semua Bon <i class="bi bi-arrow-right ms-1"></i>
-        </a>
+        <span style="font-size: 0.8rem; color: var(--text-dim);">Pintasan menu utama gudang</span>
       </div>
+      <div style="padding: 22px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px;">
+          <!-- Link 1: Stok ONT -->
+          <a href="stok.php?tab=ont" style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 6px 16px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(2, 132, 199, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+              <i class="bi bi-router"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">Stok ONT & Serial</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Cek SN ZTE/Huawei & status unit</div>
+            </div>
+          </a>
 
-      <div class="table-responsive mobile-cards-view">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>No. Surat Bon</th>
-              <th>Teknisi Pengambil</th>
-              <th>Material Diserahkan</th>
-              <th>Status</th>
-              <th>Waktu</th>
-              <th style="text-align: right;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php if (empty($recentBons)): ?>
-              <tr>
-                <td colspan="6" style="text-align: center; padding: 42px 20px;">
-                  <div style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 1.4rem;">
-                      <i class="bi bi-inbox"></i>
-                    </div>
-                    <div style="font-weight: 700; color: #334155; font-size: 0.92rem;">Belum ada surat bon yang diterbitkan</div>
-                    <div style="font-size: 0.78rem; color: #64748b; max-width: 380px;">Gunakan tombol <strong>Input Bon Teknisi</strong> di bagian atas untuk mencatat pengeluaran material pertama ke teknisi.</div>
-                  </div>
-                </td>
-              </tr>
-            <?php else: ?>
-              <?php foreach ($recentBons as $rb): 
-                $stIt = $pdo->prepare("SELECT m.name, bi.quantity_approved, bi.quantity_requested, m.unit FROM bon_items bi JOIN materials m ON bi.material_id = m.id WHERE bi.bon_id = ?");
-                $stIt->execute([$rb['id']]);
-                $rbItems = $stIt->fetchAll();
-                $rbSummary = [];
-                foreach ($rbItems as $it) {
-                    $qty = $it['quantity_approved'] > 0 ? $it['quantity_approved'] : $it['quantity_requested'];
-                    $rbSummary[] = $it['name'] . ' (' . $qty . ' ' . $it['unit'] . ')';
-                }
-                $rbSummaryText = implode(', ', $rbSummary);
-              ?>
-                <tr>
-                  <td data-label="No. Surat Bon">
-                    <a href="bon.php?id=<?= $rb['id'] ?>" style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">
-                      <?= htmlspecialchars($rb['bon_number']) ?>
-                    </a>
-                  </td>
-                  <td data-label="Teknisi">
-                    <div style="font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($rb['technician_name']) ?></div>
-                    <small style="color: var(--text-dim);"><?= htmlspecialchars($rb['technician_nik']) ?></small>
-                  </td>
-                  <td data-label="Material">
-                    <div style="max-width: 280px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.3;" title="<?= htmlspecialchars($rbSummaryText) ?>">
-                      <?= htmlspecialchars($rbSummaryText ?: 'Tidak ada barang') ?>
-                    </div>
-                  </td>
-                  <td data-label="Status">
-                    <?php if ($rb['status'] === 'approved'): ?>
-                      <span class="status-pill status-approved"><i class="bi bi-hourglass-split"></i> Proses</span>
-                    <?php elseif ($rb['status'] === 'completed'): ?>
-                      <span class="status-pill status-completed"><i class="bi bi-patch-check-fill"></i> Selesai</span>
-                    <?php elseif ($rb['status'] === 'pending'): ?>
-                      <span class="status-pill status-pending"><i class="bi bi-hourglass-split"></i> Pending</span>
-                    <?php else: ?>
-                      <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i> Dibatalkan</span>
-                    <?php endif; ?>
-                  </td>
-                  <td data-label="Waktu" style="color: var(--text-dim); font-size: 0.78rem;">
-                    <?= formatTanggalSingkat($rb['created_at']) ?>
-                  </td>
-                  <td data-label="Aksi" style="text-align: right;">
-                    <div class="btn-action-group" style="justify-content: flex-end; width: 100%;">
-                      <a href="bon.php?id=<?= $rb['id'] ?>" class="btn-icon-action" title="Lihat Rincian & Status SN">
-                        <i class="bi bi-eye"></i>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
-        </table>
+          <!-- Link 2: Surat Bon -->
+          <a href="bon.php" style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 6px 16px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+              <i class="bi bi-receipt"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">Surat Bon Material</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Pengeluaran barang ke teknisi</div>
+            </div>
+          </a>
+
+          <!-- Link 3: Riwayat Pemasangan -->
+          <a href="riwayat.php" style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 6px 16px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+              <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">Riwayat Pemasangan</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Laporan ONT & kabel terpasang</div>
+            </div>
+          </a>
+
+          <!-- Link 4: Pengguna -->
+          <a href="pengguna.php" style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 6px 16px rgba(15,64,104,0.08)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+              <i class="bi bi-people"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">Kelola Pengguna</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Akun admin gudang & teknisi</div>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
 
   </main>
 </div>
-
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
