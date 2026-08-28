@@ -425,6 +425,30 @@ function initSQLiteDatabase($pdo) {
     } catch (Exception $e) {}
 
     seedDefaultAccounts($pdo);
+    seedSampleOntSerials($pdo);
+}
+
+function seedSampleOntSerials($pdo) {
+    try {
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM material_serials")->fetchColumn();
+        if ($count < 6) {
+            $sampleSerials = [
+                [1, 'ZTEGC892F101', '74:91:1A:BC:89:65', 'allocated', 1],
+                [1, 'ZTEGC892F102', '74:91:1A:BC:89:66', 'allocated', 4],
+                [1, 'ZTEGC892F103', '74:91:1A:BC:89:67', 'available', null],
+                [1, 'ZTE-F670L-8821', '74:91:1A:BC:89:68', 'available', null],
+                [1, 'ZTE-F670L-8822', '74:91:1A:BC:89:69', 'available', null],
+                [2, 'ZTE-F609-9941', '74:91:1A:BC:90:01', 'available', null],
+                [2, 'ZTE-F609-9942', '74:91:1A:BC:90:02', 'available', null],
+                [1, 'HWTC-882103', 'F4:8E:38:11:22:33', 'available', null],
+                [2, 'FHTT-661298', '00:1E:E3:44:55:66', 'available', null]
+            ];
+            $stmt = $pdo->prepare("INSERT OR IGNORE INTO material_serials (material_id, serial_number, mac_address, status, bon_id, received_date) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            foreach ($sampleSerials as $s) {
+                try { $stmt->execute($s); } catch (Exception $e) {}
+            }
+        }
+    } catch (Exception $e) {}
 }
 
 // ---------------------------------------------------------
