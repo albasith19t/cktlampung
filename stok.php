@@ -224,7 +224,7 @@ if ($activeTab === 'mutasi') {
             </div>
             <span class="badge" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6; font-weight: 700;">Pelanggan</span>
           </div>
-          <div class="stat-label">Terpasang Sukses</div>
+          <div class="stat-label">Selesai</div>
           <div class="stat-value" style="color: #8b5cf6;"><?= $totalOntInstalled ?> <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
           <div class="stat-desc">Sudah aktif di rumah pelanggan</div>
         </div>
@@ -245,7 +245,7 @@ if ($activeTab === 'mutasi') {
               <option value="">-- Semua Status Lokasi --</option>
               <option value="gudang" <?= ($ontStatusFilter === 'gudang') ? 'selected' : '' ?>>📦 Stok Gudang</option>
               <option value="teknisi" <?= ($ontStatusFilter === 'teknisi') ? 'selected' : '' ?>>🚚 Di Teknisi</option>
-              <option value="installed" <?= ($ontStatusFilter === 'installed') ? 'selected' : '' ?>>🏠 Terpasang</option>
+              <option value="installed" <?= ($ontStatusFilter === 'installed') ? 'selected' : '' ?>>🏠 Selesai</option>
               <option value="bad" <?= ($ontStatusFilter === 'bad') ? 'selected' : '' ?>>⚠️ Unit Rusak / Bad</option>
             </select>
           </div>
@@ -348,7 +348,7 @@ if ($activeTab === 'mutasi') {
                         </span>
                       <?php elseif ($isInstalled): ?>
                         <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: var(--primary); border: 1px solid rgba(2, 132, 199, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
-                          <i class="bi bi-check2-circle me-1"></i> Terpasang
+                          <i class="bi bi-check2-circle me-1"></i> Selesai
                         </span>
                       <?php elseif ($isBad): ?>
                         <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
