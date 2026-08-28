@@ -115,6 +115,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
+
+    // UPDATE STATUS UNIT BAD / RETUR VENDOR (RMA)
+    if ($action === 'update_bad_status') {
+        try {
+            $serialId = (int)($_POST['serial_id'] ?? 0);
+            $badAction = trim($_POST['bad_action'] ?? '');
+            $notes = trim($_POST['rma_notes'] ?? '');
+
+            if ($serialId <= 0) {
+                throw new Exception("Unit serial number tidak valid.");
+            }
+
+            $stSn = $pdo->prepare("SELECT ms.*, m.name as mat_name, m.id as mat_id FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE ms.id = ?");
+            $stSn->execute([$serialId]);
+            $snData = $stSn->fetch();
+
+            if (!$snData) {
+                throw new Exception("Data serial number tidak ditemukan.");
+            }
+
+            if ($badAction === 'terima_gudang') {
+                $newNote = "[Diterima Fisik di Gudang pada " . date('d/m/Y H:i') . "] " . $snData['installed_notes'];
+                $stmtUp = $pdo->prepare("UPDATE material_serials SET installed_notes = ? WHERE id = ?");
+                $stmtUp->execute([$newNote, $serialId]);
+
+                $_SESSION['flash_message'] = [
+                    'type' => 'success',
+                    'title' => 'Unit Rusak Diterima di Gudang',
+                    'text' => "SN: {$snData['serial_number']} telah dicatat resmi diterima kembali di loket gudang."
+                ];
+            } elseif ($badAction === 'retur_vendor') {
+                $rmaInfo = !empty($notes) ? "No. RMA/Resi: {$notes}" : "Klaim Garansi Vendor";
+                $newNote = "[Retur ke Vendor: {$rmaInfo} pada " . date('d/m/Y H:i') . "] " . $snData['installed_notes'];
+                $stmtUp = $pdo->prepare("UPDATE material_serials SET installed_notes = ? WHERE id = ?");
+                $stmtUp->execute([$newNote, $serialId]);
+
+                $_SESSION['flash_message'] = [
+                    'type' => 'success',
+                    'title' => 'Unit Dikirim Retur ke Vendor',
+                    'text' => "SN: {$snData['serial_number']} berhasil diperbarui statusnya sedang dalam proses retur/klaim garansi vendor."
+                ];
+            } elseif ($badAction === 'ganti_unit_selesai') {
+                $pdo->beginTransaction();
+                // Unit ganti baru / perbaikan selesai: kembalikan ke stok gudang
+                $stmtUp = $pdo->prepare("UPDATE material_serials SET status = 'in_stock', bon_id = NULL, customer_name = NULL, customer_id = NULL, customer_address = NULL, cable_used = NULL, installed_notes = 'Unit baru pengganti retur garansi', installed_at = NULL WHERE id = ?");
+                $stmtUp->execute([$serialId]);
+
+                // Tambahkan stok material kembali
+                $stmtMat = $pdo->prepare("UPDATE materials SET stock_current = stock_current + 1 WHERE id = ?");
+                $stmtMat->execute([$snData['mat_id']]);
+
+                // Mutation log
+                $stmtMut = $pdo->prepare("
+                    INSERT INTO stock_mutations (material_id, mutation_type, quantity, stock_before, stock_after, reference_type, reference_id, user_id, notes, created_at)
+                    VALUES (?, 'in_restock', 1, 0, 0, 'rma_replacement', ?, ?, 'Penggantian unit baru dari retur vendor (SN: {$snData['serial_number']})', CURRENT_TIMESTAMP)
+                ");
+                $stmtMut->execute([$snData['mat_id'], 'RMA-OK-' . $serialId, $currentUser['id']]);
+
+                $pdo->commit();
+
+                $_SESSION['flash_message'] = [
+                    'type' => 'success',
+                    'title' => 'Unit Selesai & Kembali ke Stok Gudang!',
+                    'text' => "SN: {$snData['serial_number']} telah pulih/diganti baru dan siap digunakan kembali untuk bon teknisi."
+                ];
+            }
+
+            header("Location: ../stok.php?tab=ont");
+            exit;
+
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash_message'] = [
+                'type' => 'error',
+                'title' => 'Gagal Memproses Unit',
+                'text' => $e->getMessage()
+            ];
+            header("Location: ../stok.php?tab=ont");
+            exit;
+        }
+    }
 }
 
 header("Location: ../stok.php");

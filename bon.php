@@ -408,7 +408,7 @@ if ($detailId > 0) {
             </div>
           <?php else: ?>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <!-- 2 Pilihan Kategori Material (Tab Filter) -->
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <button 
@@ -440,9 +440,33 @@ if ($detailId > 0) {
               </button>
             </div>
 
-            <span style="font-size: 0.75rem; color: var(--text-muted);">
-              Klik tombol SN untuk melaporkan material terpasang
-            </span>
+            <!-- Scanner Camera Action -->
+            <button 
+              type="button" 
+              class="btn-primary" 
+              style="padding: 7px 16px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+              onclick="openBarcodeScanner((scannedSN) => {
+                const allButtons = document.querySelectorAll('button[onclick*=\'openInstallSNModal\']');
+                let found = false;
+                allButtons.forEach(btn => {
+                  if (btn.getAttribute('onclick').includes(scannedSN)) {
+                    found = true;
+                    btn.click();
+                  }
+                });
+                if (!found) {
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'SN Tidak Ditemukan di Bon',
+                    text: 'Serial number \"' + scannedSN + '\" tidak terdapat pada daftar tugas bon Anda saat ini.',
+                    confirmButtonColor: '#0F4068'
+                  });
+                }
+              })"
+              title="Arahkan kamera ke stiker barcode ONT modem"
+            >
+              <i class="bi bi-camera-fill"></i> Scan Barcode ONT
+            </button>
           </div>
 
           <!-- Desktop Table View (Screens > 768px) -->

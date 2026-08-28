@@ -30,6 +30,20 @@ $myActiveBonCount = $isTeknisi ? (int)$pdo->query("SELECT COUNT(*) FROM bon_requ
         placeholder="<?= $isTeknisi ? 'Cari nomor bon atau pelanggan saya...' : 'Cari material, ONT, kabel, no bon, teknisi...' ?>" 
         autocomplete="off"
       >
+      <button 
+        type="button" 
+        onclick="openBarcodeScanner((scanned) => {
+          const inp = document.getElementById('globalSearchInput');
+          if (inp) {
+            inp.value = scanned;
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        })" 
+        style="position: absolute; right: 60px; background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px; font-size: 1rem;" 
+        title="Scan Barcode Kamera untuk Cari Otomatis"
+      >
+        <i class="bi bi-camera-fill"></i>
+      </button>
       <span class="search-shortcut-badge">Ctrl K</span>
     </div>
     <div class="search-results-dropdown" id="searchResultsDropdown"></div>

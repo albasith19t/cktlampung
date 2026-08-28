@@ -415,6 +415,41 @@ $modalTechnicians = $pdo->query("SELECT id, name, nik FROM users WHERE role = 't
   </div>
 </div>
 
+<!-- =========================================================================
+     5. MODAL: SCANNER BARCODE & QR CODE KAMERA (HP & LAPTOP)
+     ========================================================================= -->
+<div class="modal-backdrop" id="barcodeScannerModal">
+  <div class="modal-dialog" style="max-width: 440px;">
+    <div class="modal-header" style="background: rgba(2, 132, 199, 0.08);">
+      <div class="modal-title">
+        <i class="bi bi-camera-fill text-primary"></i> Scan Barcode / QR Code ONT
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeBarcodeScannerModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" style="padding: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
+        Arahkan kamera ke stiker <strong>Barcode Serial Number (SN)</strong> atau <strong>QR Code</strong> pada modem ONT.
+      </div>
+
+      <!-- Camera Viewport Box -->
+      <div id="barcodeReaderViewport" style="width: 100%; min-height: 260px; background: #000; border-radius: var(--radius-md); overflow: hidden; position: relative;">
+        <!-- html5-qrcode renders camera stream here -->
+      </div>
+
+      <div id="scannerStatusFeedback" style="font-size: 0.78rem; text-align: center; color: var(--text-dim); margin-top: 10px;">
+        <i class="bi bi-hourglass-split me-1"></i> Mengaktifkan kamera...
+      </div>
+    </div>
+
+    <div class="modal-footer" style="justify-content: space-between;">
+      <button type="button" class="btn-secondary" onclick="closeBarcodeScannerModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- SweetAlert2 Flash Notification Trigger -->
 <?php if (isset($_SESSION['flash_message'])): 
   $fm = $_SESSION['flash_message'];
@@ -636,6 +671,96 @@ window.openInstallSNModal = function(bonId, bonNumber, serialNumber, matName, ma
 
 window.closeInstallSNModal = function() {
   const modal = document.getElementById('installSNModal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+  }
+};
+
+/* HTML5 Barcode / QR Code Camera Scanner Controller */
+let html5QrCodeScanner = null;
+let currentScannerCallback = null;
+
+window.openBarcodeScanner = function(onScanCallback) {
+  currentScannerCallback = onScanCallback;
+  const modal = document.getElementById('barcodeScannerModal');
+  if (!modal) return;
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  const statusText = document.getElementById('scannerStatusFeedback');
+  if (statusText) statusText.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Mengaktifkan kamera HP / Laptop...';
+
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1250;
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch(e) {}
+  };
+
+  setTimeout(() => {
+    if (html5QrCodeScanner) {
+      try { html5QrCodeScanner.stop(); } catch(e) {}
+    }
+
+    if (typeof Html5Qrcode === 'undefined') {
+      if (statusText) statusText.innerHTML = '<span class="text-danger">Library scanner belum termuat. Periksa koneksi internet.</span>';
+      return;
+    }
+
+    html5QrCodeScanner = new Html5Qrcode("barcodeReaderViewport");
+    const config = {
+      fps: 15,
+      qrbox: { width: 280, height: 160 },
+      aspectRatio: 1.0
+    };
+
+    html5QrCodeScanner.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        playBeep();
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        if (statusText) {
+          statusText.innerHTML = `<span style="color: #10b981; font-weight: 800; font-family: var(--font-mono); font-size: 0.9rem;">✅ Berhasil Scan: ${decodedText}</span>`;
+        }
+
+        setTimeout(() => {
+          closeBarcodeScannerModal();
+          if (typeof currentScannerCallback === 'function') {
+            currentScannerCallback(decodedText.trim());
+          }
+        }, 400);
+      },
+      () => {}
+    ).catch(err => {
+      console.warn("Camera start error:", err);
+      if (statusText) {
+        statusText.innerHTML = '<span style="color: #ef4444; font-size: 0.78rem;">⚠️ Tidak dapat mengakses kamera. Pastikan izin kamera telah diaktifkan di browser.</span>';
+      }
+    });
+  }, 250);
+};
+
+window.closeBarcodeScannerModal = function() {
+  if (html5QrCodeScanner) {
+    try {
+      html5QrCodeScanner.stop().then(() => {
+        html5QrCodeScanner.clear();
+      }).catch(() => {});
+    } catch(e) {}
+  }
+  const modal = document.getElementById('barcodeScannerModal');
   if (modal) {
     modal.classList.remove('show');
     document.body.style.overflow = 'auto';

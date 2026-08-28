@@ -298,9 +298,26 @@ if ($activeTab === 'mutasi') {
                           <i class="bi bi-check2-circle me-1"></i> Selesai
                         </span>
                       <?php elseif ($isBad): ?>
-                        <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
-                          <i class="bi bi-exclamation-triangle-fill me-1"></i> Unit Rusak / Bad
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                          <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; padding: 6px 12px; font-size: 0.82rem;">
+                            <i class="bi bi-x-octagon-fill me-1"></i> Unit Rusak / Bad
+                          </span>
+                          <?php if ($isAdmin): ?>
+                            <button 
+                              type="button" 
+                              class="btn-secondary" 
+                              style="padding: 4px 10px; font-size: 0.75rem; border-color: rgba(239, 68, 68, 0.4); color: #dc2626; cursor: pointer;"
+                              onclick="openRmaModal(<?= $sn['id'] ?>, '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['material_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['installed_notes'] ?? '', ENT_QUOTES) ?>')"
+                            >
+                              <i class="bi bi-arrow-repeat me-1"></i> Kelola Retur / RMA
+                            </button>
+                          <?php endif; ?>
+                        </div>
+                        <?php if (!empty($sn['installed_notes'])): ?>
+                          <div style="font-size: 0.74rem; color: #dc2626; margin-top: 4px; font-weight: 600;">
+                            <i class="bi bi-info-circle me-1"></i> <?= htmlspecialchars($sn['installed_notes']) ?>
+                          </div>
+                        <?php endif; ?>
                       <?php else: ?>
                         <span class="badge" style="background: rgba(100, 116, 139, 0.12); color: #64748b; font-size: 0.82rem;">
                           <?= htmlspecialchars(ucfirst($sn['status'])) ?>
@@ -521,9 +538,29 @@ if ($activeTab === 'mutasi') {
         </div>
 
         <div class="form-group">
-          <label class="form-label"><i class="bi bi-upc-scan text-primary me-1"></i> Serial Number (SN) *</label>
-          <textarea name="new_serials" class="form-control font-mono" rows="4" placeholder="Masukkan 1 atau banyak SN (bisa pisahkan dengan baris baru atau koma)&#10;Contoh:&#10;ZTEGC892F110&#10;ZTEGC892F111&#10;HWTC8812905" required></textarea>
-          <small style="color: var(--text-dim); font-size: 0.74rem;">Bisa input satu persatu atau banyak SN sekaligus dari scanner barcode.</small>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;"><i class="bi bi-upc-scan text-primary me-1"></i> Serial Number (SN) *</label>
+            <button 
+              type="button" 
+              class="btn-secondary" 
+              style="padding: 4px 10px; font-size: 0.76rem; border-color: rgba(2, 132, 199, 0.4); color: var(--primary); cursor: pointer;"
+              onclick="openBarcodeScanner((scannedSN) => {
+                const ta = document.getElementById('inputNewSerials');
+                if (ta) {
+                  ta.value = ta.value ? ta.value + '\n' + scannedSN : scannedSN;
+                  const qtyInput = document.getElementById('modalOntQty');
+                  if (qtyInput) {
+                    const lines = ta.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0);
+                    qtyInput.value = lines.length;
+                  }
+                }
+              })"
+            >
+              <i class="bi bi-camera-fill me-1 text-primary"></i> Scan Barcode Kamera
+            </button>
+          </div>
+          <textarea name="new_serials" id="inputNewSerials" class="form-control font-mono" rows="4" placeholder="Masukkan 1 atau banyak SN (bisa pisahkan dengan baris baru atau koma)&#10;Contoh:&#10;ZTEGC892F110&#10;ZTEGC892F111&#10;HWTC8812905" required></textarea>
+          <small style="color: var(--text-dim); font-size: 0.74rem;">Bisa ketik manual atau gunakan tombol <strong>Scan Barcode Kamera</strong> di atas.</small>
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
@@ -542,6 +579,78 @@ if ($activeTab === 'mutasi') {
   </div>
 </div>
 
+<!-- =========================================================
+     MODAL: KELOLA UNIT BAD / RETUR VENDOR (RMA)
+     ========================================================= -->
+<div class="modal-backdrop" id="rmaModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="bi bi-arrow-repeat text-primary"></i> Kelola Unit Rusak / Retur Vendor (RMA)
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeRmaModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form method="POST" action="api/stok_action.php">
+      <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+      <input type="hidden" name="action" value="update_bad_status">
+      <input type="hidden" name="serial_id" id="rmaSerialId" value="">
+
+      <div class="modal-body">
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Perangkat ONT Bermasalah:</div>
+          <div style="font-weight: 800; font-size: 1rem; color: var(--text-main); margin-top: 2px;" id="rmaMatName">-</div>
+          <div style="font-family: var(--font-mono); font-weight: 800; font-size: 0.92rem; color: #dc2626; margin-top: 2px;" id="rmaSerialNum">-</div>
+          <div style="font-size: 0.76rem; color: #b91c1c; margin-top: 6px;" id="rmaCurrentNotes">-</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label font-sans" style="font-weight: 700;">Pilih Tindakan Logistik *</label>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer;">
+              <input type="radio" name="bad_action" value="terima_gudang" checked style="margin-top: 3px;">
+              <div>
+                <strong style="font-size: 0.86rem; color: var(--text-main); display: block;">📦 Terima Fisik di Gudang</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">Teknisi telah menyerahkan fisik modem rusak kembali ke loket gudang.</span>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer;">
+              <input type="radio" name="bad_action" value="retur_vendor" style="margin-top: 3px;">
+              <div>
+                <strong style="font-size: 0.86rem; color: var(--text-main); display: block;">🚚 Kirim Retur / Klaim Garansi Vendor</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">Unit dikirim ke distributor/vendor ZTE/Huawei untuk proses klaim garansi.</span>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer;">
+              <input type="radio" name="bad_action" value="ganti_unit_selesai" style="margin-top: 3px;">
+              <div>
+                <strong style="font-size: 0.86rem; color: #047857; display: block;">✅ Selesai / Diganti Unit Baru (Masuk Stok Gudang)</strong>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">Vendor telah mengganti unit baru. Unit akan otomatis kembali ke status <strong>Tersedia di Gudang</strong> (+1 Stok).</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Nomor Resi / No. RMA / Catatan Tambahan (Opsional)</label>
+          <input type="text" name="rma_notes" class="form-control" placeholder="Contoh: No. Resi JNE 12345 / RMA-ZTE-009">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeRmaModal()">Batal</button>
+        <button type="submit" class="btn-primary">
+          <i class="bi bi-check-lg me-1"></i> Simpan Status
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 function openAddOntModal() {
   const modal = document.getElementById('addOntModal');
@@ -553,16 +662,32 @@ function closeAddOntModal() {
   modal.classList.remove('show');
 }
 
+function openRmaModal(serialId, snNumber, matName, notes) {
+  document.getElementById('rmaSerialId').value = serialId;
+  document.getElementById('rmaSerialNum').textContent = 'SN: ' + snNumber;
+  document.getElementById('rmaMatName').textContent = matName;
+  document.getElementById('rmaCurrentNotes').textContent = notes ? 'Catatan kendala: ' + notes : 'Tidak ada catatan';
+  
+  const modal = document.getElementById('rmaModal');
+  modal.classList.add('show');
+}
+
+function closeRmaModal() {
+  const modal = document.getElementById('rmaModal');
+  modal.classList.remove('show');
+}
+
 window.addEventListener('click', function(e) {
-  const modal = document.getElementById('addOntModal');
-  if (e.target === modal) {
-    closeAddOntModal();
-  }
+  const addModal = document.getElementById('addOntModal');
+  const rmaModal = document.getElementById('rmaModal');
+  if (e.target === addModal) closeAddOntModal();
+  if (e.target === rmaModal) closeRmaModal();
 });
 
 window.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeAddOntModal();
+    closeRmaModal();
   }
 });
 </script>

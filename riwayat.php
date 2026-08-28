@@ -19,9 +19,6 @@ if (empty($currentUser)) {
 $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
 $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
 
-require_once __DIR__ . '/includes/header.php';
-require_once __DIR__ . '/includes/sidebar.php';
-
 // Filter Parameters
 $statusFilter = $_GET['status'] ?? ''; // 'installed', 'bad', 'change'
 $searchFilter = trim($_GET['search'] ?? '');
@@ -70,6 +67,50 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $historyList = $stmt->fetchAll();
 
+// Handle CSV/Excel Export (Download langsung jika parameter export ada)
+if (isset($_GET['export']) && in_array($_GET['export'], ['csv', 'excel'])) {
+    $filename = "Rekap_Pemasangan_CKT_" . date('Ymd_His') . ".csv";
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    $output = fopen('php://output', 'w');
+    // Output UTF-8 BOM so Excel opens indonesian characters properly
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    
+    fputcsv($output, ['No', 'Tanggal Pasang', 'No Surat Bon', 'Teknisi', 'NIK', 'Status', 'Serial Number ONT', 'MAC Address', 'Perangkat ONT', 'ID Pelanggan', 'Nama Pelanggan', 'Alamat Pemasangan', 'Kabel Drop Core', 'Catatan / Alasan']);
+
+    $no = 1;
+    foreach ($historyList as $row) {
+        $statusLabel = 'Terpasang';
+        if ($row['status'] === 'bad') $statusLabel = 'Unit Bad / Rusak';
+        if ($row['status'] === 'change') $statusLabel = 'Change Perangkat';
+
+        fputcsv($output, [
+            $no++,
+            $row['installed_at'] ? date('d/m/Y H:i', strtotime($row['installed_at'])) : '-',
+            $row['bon_number'],
+            $row['technician_name'],
+            $row['technician_nik'],
+            $statusLabel,
+            $row['serial_number'],
+            $row['mac_address'] ?: '-',
+            $row['material_name'],
+            $row['customer_id'] ?: '-',
+            $row['customer_name'] ?: '-',
+            $row['customer_address'] ?: '-',
+            $row['cable_used'] ?: '-',
+            $row['installed_notes'] ?: '-'
+        ]);
+    }
+    fclose($output);
+    exit;
+}
+
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/sidebar.php';
+
 // KPI Stats Query (for current user/filter)
 $kpiSql = "
     SELECT ms.status, COUNT(*) as total
@@ -108,7 +149,7 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
 
   <main class="content-body">
     <!-- Header Row -->
-    <div class="page-header-row">
+    <div class="page-header-row no-print">
       <div>
         <div class="page-title-heading">
           <i class="bi bi-clock-history text-primary me-2"></i> Riwayat Pemasangan & Laporan Lapangan
@@ -118,8 +159,20 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px;">
-        <a href="bon.php" class="btn-secondary" style="font-size: 0.85rem;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <!-- Export Excel Link (preserving current filters) -->
+        <?php
+          $exportParams = $_GET;
+          $exportParams['export'] = 'excel';
+          $exportUrl = 'riwayat.php?' . http_build_query($exportParams);
+        ?>
+        <a href="<?= htmlspecialchars($exportUrl) ?>" class="btn-secondary" style="font-size: 0.85rem; border-color: rgba(16, 185, 129, 0.4); color: #047857; text-decoration: none; display: inline-flex; align-items: center;" title="Unduh data riwayat dalam format Excel / CSV">
+          <i class="bi bi-file-earmark-excel me-1 text-success"></i> Export Excel
+        </a>
+        <button type="button" class="btn-secondary" style="font-size: 0.85rem;" onclick="window.print()" title="Cetak laporan / simpan PDF">
+          <i class="bi bi-printer me-1 text-primary"></i> Cetak / PDF
+        </button>
+        <a href="bon.php" class="btn-secondary" style="font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center;">
           <i class="bi bi-card-checklist me-1 text-primary"></i> <?= $isTeknisi ? 'Buka Tugas & Bon Aktif' : 'Kelola Surat Bon' ?>
         </a>
       </div>

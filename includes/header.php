@@ -46,6 +46,9 @@ $stockAlertCount = getStockAlertCount($pdo);
   <!-- Chart.js for Logistics Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- HTML5 QR Code & Barcode Scanner for Cameras -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
   <!-- Custom Core Stylesheet -->
   <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
 </head>

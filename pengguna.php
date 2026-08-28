@@ -80,7 +80,10 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
         <div class="page-title-subheading">Kelola hak akses Admin Gudang, daftarkan teknisi lapangan baru, dan atur akun karyawan.</div>
       </div>
 
-      <div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="api/backup.php" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; border-color: rgba(16, 185, 129, 0.4); color: #047857;" title="Unduh cadangan database SQL">
+          <i class="bi bi-database-down me-1 text-success"></i> Unduh Backup DB (.sql)
+        </a>
         <button type="button" class="btn-primary" onclick="openAddUserModal()">
           <i class="bi bi-person-plus-fill me-1"></i> Tambah Pengguna Baru
         </button>

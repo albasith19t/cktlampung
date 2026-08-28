@@ -81,6 +81,9 @@ $lowStockItems = $pdo->query("
           <a href="pengguna.php" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center;">
             <i class="bi bi-people-fill me-1 text-primary"></i> Kelola Pengguna
           </a>
+          <a href="api/backup.php" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; border-color: rgba(16, 185, 129, 0.4); color: #047857;" title="Unduh cadangan database SQL">
+            <i class="bi bi-database-down me-1 text-success"></i> Backup DB
+          </a>
         </div>
       <?php endif; ?>
     </div>
