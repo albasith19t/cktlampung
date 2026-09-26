@@ -798,14 +798,19 @@ window.triggerUniversalScanner = function() {
     if (matched) return;
 
     // 2. If on stok.php and in add ONT modal
-    const ta = document.getElementById('inputNewSerials');
-    if (ta && document.getElementById('addOntModal') && document.getElementById('addOntModal').classList.contains('show')) {
-      ta.value = ta.value ? ta.value + '\n' + scannedSN : scannedSN;
-      const qtyInput = document.getElementById('modalOntQty');
-      if (qtyInput) {
-        const lines = ta.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0);
-        qtyInput.value = lines.length;
+    const addOntModal = document.getElementById('addOntModal');
+    if (addOntModal && addOntModal.classList.contains('show')) {
+      const clean = scannedSN.replace(/[:-]/g, '');
+      const isLikelyMac = /^[0-9A-Fa-f]{12}$/.test(clean) && !/^ZTEG|^HWTC|^FHTT/i.test(scannedSN);
+      if (isLikelyMac && typeof window.appendMacAddress === 'function') {
+        window.appendMacAddress(scannedSN);
+      } else if (typeof window.appendSerialNumber === 'function') {
+        window.appendSerialNumber(scannedSN);
+      } else {
+        const ta = document.getElementById('inputNewSerials');
+        if (ta) ta.value = ta.value ? ta.value + '\n' + scannedSN : scannedSN;
       }
+      if (typeof window.syncOntQty === 'function') window.syncOntQty();
       return;
     }
 

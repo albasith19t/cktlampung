@@ -9,6 +9,7 @@ $pageHeaderTitle = "Manajemen Stok ONT & Kabel Drop Core";
 $pageHeaderSubtitle = "Data real-time Serial Number ONT (Stok Gudang / Dibawa Teknisi) dan ketersediaan kabel fiber optic.";
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/pagination.php';
 
 $currentUser = getCurrentUser($pdo);
 $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
@@ -89,6 +90,44 @@ if (!empty($snSearch)) {
 }
 
 $ontSql .= " ORDER BY CASE WHEN ms.status = 'available' THEN 1 WHEN ms.status = 'allocated' THEN 2 ELSE 3 END, ms.received_date DESC, ms.id DESC";
+
+// Count total for pagination
+$ontCountSql = "SELECT COUNT(*) FROM material_serials ms
+    JOIN materials m ON ms.material_id = m.id
+    LEFT JOIN bon_requests b ON ms.bon_id = b.id
+    LEFT JOIN users u ON b.user_id = u.id
+    WHERE 1=1";
+// Rebuild conditions for count (reuse ontParams)
+$ontCountWhere = '';
+if ($ontMaterialId > 0) {
+    $ontCountWhere .= " AND ms.material_id = ?";
+}
+if (!empty($ontStatusFilter)) {
+    if ($ontStatusFilter === 'gudang') {
+        $ontCountWhere .= " AND ms.status = 'available'";
+    } elseif ($ontStatusFilter === 'teknisi') {
+        $ontCountWhere .= " AND (ms.status = 'allocated' OR (ms.bon_id IS NOT NULL AND ms.status != 'installed' AND ms.status != 'bad'))";
+    } elseif ($ontStatusFilter === 'installed') {
+        $ontCountWhere .= " AND ms.status = 'installed'";
+    } elseif ($ontStatusFilter === 'bad') {
+        $ontCountWhere .= " AND ms.status = 'bad'";
+    } else {
+        $ontCountWhere .= " AND ms.status = ?";
+    }
+}
+if (!empty($snSearch)) {
+    $ontCountWhere .= " AND (ms.serial_number LIKE ? OR ms.mac_address LIKE ? OR b.bon_number LIKE ? OR m.name LIKE ? OR m.brand LIKE ? OR u.name LIKE ? OR ms.customer_name LIKE ?)";
+}
+$stmtOntCount = $pdo->prepare($ontCountSql . $ontCountWhere);
+$stmtOntCount->execute($ontParams);
+$totalOntFiltered = (int)$stmtOntCount->fetchColumn();
+
+// Pagination for ONT tab
+$ontPerPage = 20;
+$ontCurrentPage = max(1, (int)($_GET['page'] ?? 1));
+$ontPg = paginate($totalOntFiltered, $ontCurrentPage, $ontPerPage);
+
+$ontSql .= " LIMIT " . $ontPg['limit'] . " OFFSET " . $ontPg['offset'];
 $stmtOnt = $pdo->prepare($ontSql);
 $stmtOnt->execute($ontParams);
 $ontList = $stmtOnt->fetchAll();
@@ -230,9 +269,9 @@ if ($activeTab === 'mutasi') {
       <div style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
         <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #fafbfc;">
           <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">
-            <i class="bi bi-router text-primary me-2"></i> Daftar Stok Serial Number ONT (<?= count($ontList) ?>)
+            <i class="bi bi-router text-primary me-2"></i> Daftar Stok Serial Number ONT (<?= number_format($totalOntFiltered) ?>)
           </div>
-          <span style="font-size: 0.8rem; color: var(--text-dim);">Menampilkan unit terverifikasi</span>
+          <span style="font-size: 0.8rem; color: var(--text-dim);">Halaman <?= $ontPg['current_page'] ?> dari <?= $ontPg['total_pages'] ?></span>
         </div>
 
         <div class="table-responsive mobile-cards-view">
@@ -261,7 +300,7 @@ if ($activeTab === 'mutasi') {
                   $isBad = ($sn['status'] === 'bad');
                 ?>
                   <tr>
-                    <td data-label="No" style="color: var(--text-dim); font-size: 0.82rem;"><?= $idx + 1 ?></td>
+                    <td data-label="No" style="color: var(--text-dim); font-size: 0.82rem;"><?= $ontPg['offset'] + $idx + 1 ?></td>
                     <td data-label="Serial Number (SN)">
                       <div style="display: flex; align-items: center; gap: 10px;">
                         <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1.1rem; border-radius: 8px; background: rgba(2, 132, 199, 0.08); color: var(--primary);">
@@ -333,6 +372,12 @@ if ($activeTab === 'mutasi') {
             </tbody>
           </table>
         </div>
+        <?php
+          $ontPgParams = $_GET;
+          unset($ontPgParams['page']);
+          $ontPgBase = 'stok.php' . (!empty($ontPgParams) ? '?' . http_build_query($ontPgParams) : '');
+          renderPagination($ontPg, $ontPgBase);
+        ?>
       </div>
 
     <!-- =========================================================
@@ -509,27 +554,32 @@ if ($activeTab === 'mutasi') {
 </div>
 
 <!-- =========================================================
-     MODAL: TAMBAH SERIAL NUMBER ONT BARU
+     MODAL: TAMBAH SERIAL NUMBER & MAC ONT BARU
      ========================================================= -->
 <div class="modal-backdrop" id="addOntModal">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-header">
-      <div class="modal-title">
-        <i class="bi bi-plus-circle-fill text-primary"></i> Tambah Serial Number ONT Baru
+      <div>
+        <div class="modal-title">
+          <i class="bi bi-plus-circle-fill text-primary"></i> Tambah Serial Number & MAC ONT Baru
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
+          Input Serial Number (SN) di kolom kiri dan MAC Address di kolom kanan.
+        </div>
       </div>
       <button type="button" class="modal-close-btn" onclick="closeAddOntModal()">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
 
-    <form method="POST" action="api/stok_action.php">
+    <form method="POST" action="api/stok_action.php" id="formAddOnt">
       <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
       <input type="hidden" name="action" value="restock">
       <input type="hidden" name="reference_id" value="SN-ADD-<?= date('YmdHis') ?>">
-      <input type="hidden" name="notes" value="Penerimaan Serial Number ONT baru ke Gudang">
+      <input type="hidden" name="notes" value="Penerimaan Serial Number & MAC ONT baru ke Gudang">
 
       <div class="modal-body">
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 14px;">
           <label class="form-label"><i class="bi bi-router text-primary me-1"></i> Tipe / Merek ONT *</label>
           <select name="material_id" id="modalOntMaterialId" class="form-select" required>
             <?php foreach ($serializedMaterials as $sm): ?>
@@ -540,30 +590,94 @@ if ($activeTab === 'mutasi') {
           </select>
         </div>
 
-        <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label class="form-label" style="margin-bottom: 0;"><i class="bi bi-upc-scan text-primary me-1"></i> Serial Number (SN) *</label>
-            <button 
-              type="button" 
-              class="btn-secondary" 
-              style="padding: 4px 10px; font-size: 0.76rem; border-color: rgba(2, 132, 199, 0.4); color: var(--primary); cursor: pointer;"
-              onclick="openBarcodeScanner((scannedSN) => {
-                const ta = document.getElementById('inputNewSerials');
-                if (ta) {
-                  ta.value = ta.value ? ta.value + '\n' + scannedSN : scannedSN;
-                  const qtyInput = document.getElementById('modalOntQty');
-                  if (qtyInput) {
-                    const lines = ta.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0);
-                    qtyInput.value = lines.length;
-                  }
-                }
-              })"
-            >
-              <i class="bi bi-camera-fill me-1 text-primary"></i> Scan Barcode Kamera
-            </button>
+        <!-- Tombol Scan Berurutan Kamera Cepat -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            style="padding: 4px 12px; font-size: 0.75rem; border-color: rgba(2, 132, 199, 0.4); color: var(--primary); background: rgba(2, 132, 199, 0.05); font-weight: 700; cursor: pointer;"
+            onclick="startSequentialScan()"
+          >
+            <i class="bi bi-camera-fill me-1 text-primary"></i> Scan Cepat (SN lalu MAC)
+          </button>
+        </div>
+
+        <!-- Grid 2 Kolom: Kiri SN, Kanan MAC -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px;">
+          <!-- Kolom Kiri: Serial Number (SN) -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">
+                <i class="bi bi-upc-scan text-primary me-1"></i> Serial Number (SN) *
+              </label>
+              <button 
+                type="button" 
+                class="btn-secondary" 
+                style="padding: 3px 8px; font-size: 0.74rem; border-color: rgba(2, 132, 199, 0.4); color: var(--primary); cursor: pointer;"
+                onclick="openBarcodeScanner((scannedSN) => { appendSerialNumber(scannedSN); })"
+              >
+                <i class="bi bi-camera-fill me-1 text-primary"></i> Scan SN
+              </button>
+            </div>
+            <textarea 
+              name="new_serials" 
+              id="inputNewSerials" 
+              class="form-control font-mono" 
+              rows="6" 
+              placeholder="Contoh:&#10;ZTEGDEAF144B&#10;ZTEGDEAF1AF0" 
+              required
+              style="text-transform: uppercase; font-size: 0.85rem; line-height: 1.5;"
+              oninput="syncOntQty()"
+            ></textarea>
+            <small style="color: var(--text-dim); font-size: 0.72rem; margin-top: 4px; display: block;">
+              1 baris per Serial Number unit ONT.
+            </small>
           </div>
-          <textarea name="new_serials" id="inputNewSerials" class="form-control font-mono" rows="4" placeholder="Masukkan 1 atau banyak SN (bisa pisahkan dengan baris baru atau koma)&#10;Contoh:&#10;ZTEGC892F110&#10;ZTEGC892F111&#10;HWTC8812905" required></textarea>
-          <small style="color: var(--text-dim); font-size: 0.74rem;">Bisa ketik manual atau gunakan tombol <strong>Scan Barcode Kamera</strong> di atas.</small>
+
+          <!-- Kolom Kanan: MAC Address -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">
+                <i class="bi bi-hdd-network text-primary me-1"></i> MAC Address
+              </label>
+              <button 
+                type="button" 
+                class="btn-secondary" 
+                style="padding: 3px 8px; font-size: 0.74rem; border-color: rgba(16, 185, 129, 0.4); color: #059669; cursor: pointer;"
+                onclick="openBarcodeScanner((scannedMAC) => { appendMacAddress(scannedMAC); })"
+              >
+                <i class="bi bi-camera-fill me-1 text-success"></i> Scan MAC
+              </button>
+            </div>
+            <textarea 
+              name="new_macs" 
+              id="inputNewMacs" 
+              class="form-control font-mono" 
+              rows="6" 
+              placeholder="Contoh:&#10;D8855EE71889&#10;D8855EE74367" 
+              style="text-transform: uppercase; font-size: 0.85rem; line-height: 1.5;"
+              oninput="syncOntQty()"
+            ></textarea>
+            <small style="color: var(--text-dim); font-size: 0.72rem; margin-top: 4px; display: block;">
+              Baris ke-1 di kanan berpasangan dengan baris ke-1 di kiri.
+            </small>
+          </div>
+        </div>
+
+        <!-- Smart Helper Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(2, 132, 199, 0.05); border: 1px dashed rgba(2, 132, 199, 0.25); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 14px; font-size: 0.75rem; flex-wrap: wrap; gap: 8px;">
+          <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;" id="ontPairCounterInfo">
+            <i class="bi bi-info-circle text-primary"></i> 0 Unit terisi
+          </span>
+          <button 
+            type="button" 
+            class="btn-secondary" 
+            style="padding: 3px 10px; font-size: 0.72rem; background: #ffffff; color: var(--primary); font-weight: 700;"
+            onclick="autoSplitSnAndMac()"
+            title="Otomatis pisahkan jika Anda menempelkan teks SN dan MAC secara bercampur"
+          >
+            <i class="bi bi-magic me-1"></i> Pisahkan Otomatis SN & MAC
+          </button>
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
@@ -575,7 +689,7 @@ if ($activeTab === 'mutasi') {
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeAddOntModal()">Batal</button>
         <button type="submit" class="btn-primary">
-          <i class="bi bi-check-lg me-1"></i> Simpan SN ke Stok Gudang
+          <i class="bi bi-check-lg me-1"></i> Simpan SN & MAC ke Stok Gudang
         </button>
       </div>
     </form>
@@ -658,11 +772,139 @@ if ($activeTab === 'mutasi') {
 function openAddOntModal() {
   const modal = document.getElementById('addOntModal');
   modal.classList.add('show');
+  syncOntQty();
 }
 
 function closeAddOntModal() {
   const modal = document.getElementById('addOntModal');
   modal.classList.remove('show');
+}
+
+function appendSerialNumber(sn) {
+  const ta = document.getElementById('inputNewSerials');
+  if (!ta) return;
+  const val = ta.value.trim();
+  ta.value = val ? val + '\n' + sn.toUpperCase() : sn.toUpperCase();
+  syncOntQty();
+}
+
+function appendMacAddress(mac) {
+  const ta = document.getElementById('inputNewMacs');
+  if (!ta) return;
+  const val = ta.value.trim();
+  ta.value = val ? val + '\n' + mac.toUpperCase() : mac.toUpperCase();
+  syncOntQty();
+}
+
+function syncOntQty() {
+  const taSn = document.getElementById('inputNewSerials');
+  const taMac = document.getElementById('inputNewMacs');
+  const qtyInput = document.getElementById('modalOntQty');
+  const counterInfo = document.getElementById('ontPairCounterInfo');
+  
+  const snLines = taSn ? taSn.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0) : [];
+  const macLines = taMac ? taMac.value.trim().split(/\r\n|\r|\n/).filter(s => s.trim().length > 0) : [];
+  
+  const count = Math.max(snLines.length, 1);
+  if (qtyInput) {
+    qtyInput.value = count;
+  }
+  
+  if (counterInfo) {
+    if (snLines.length > 0 || macLines.length > 0) {
+      counterInfo.innerHTML = `<span style="color: var(--primary); font-weight: 700;">${snLines.length} SN</span> &bull; <span style="color: #059669; font-weight: 700;">${macLines.length} MAC</span> (Terdeteksi: <strong>${count} Unit</strong>)`;
+    } else {
+      counterInfo.innerHTML = '<i class="bi bi-info-circle text-primary"></i> 0 Unit terisi';
+    }
+  }
+}
+
+function autoSplitSnAndMac() {
+  const taSn = document.getElementById('inputNewSerials');
+  const taMac = document.getElementById('inputNewMacs');
+  if (!taSn || !taMac) return;
+
+  const rawText = (taSn.value + '\n' + taMac.value).trim();
+  if (!rawText) return;
+
+  const lines = rawText.split(/\r\n|\r|\n/).map(l => l.trim()).filter(l => l.length > 0);
+  let newSns = [];
+  let newMacs = [];
+
+  // 1. Cek jika satu baris berisi 2 kata (misal dipisahkan spasi/tab/koma)
+  let hasPairsInLine = lines.some(l => /[\s,;\t]+/.test(l));
+
+  if (hasPairsInLine) {
+    lines.forEach(l => {
+      const parts = l.split(/[\s,;\t]+/).filter(p => p.length > 0);
+      if (parts.length >= 2) {
+        newSns.push(parts[0].toUpperCase());
+        newMacs.push(parts[1].toUpperCase());
+      } else if (parts.length === 1) {
+        newSns.push(parts[0].toUpperCase());
+      }
+    });
+  } else if (lines.length >= 2 && lines.length % 2 === 0) {
+    // 2. Baris selang-seling (baris 1 = SN, baris 2 = MAC, dst)
+    for (let i = 0; i < lines.length; i += 2) {
+      newSns.push(lines[i].toUpperCase());
+      newMacs.push(lines[i + 1].toUpperCase());
+    }
+  } else {
+    // 3. Pisahkan berdasarkan pola karakter MAC address
+    lines.forEach(l => {
+      const clean = l.replace(/[:-]/g, '');
+      if (/^[0-9A-Fa-f]{12}$/.test(clean) && !/^ZTEG|^HWTC|^FHTT/i.test(l)) {
+        newMacs.push(l.toUpperCase());
+      } else {
+        newSns.push(l.toUpperCase());
+      }
+    });
+  }
+
+  taSn.value = newSns.join('\n');
+  taMac.value = newMacs.join('\n');
+  syncOntQty();
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil Dipisahkan!',
+      text: `Terdeteksi ${newSns.length} Serial Number (kiri) dan ${newMacs.length} MAC Address (kanan).`,
+      timer: 1800,
+      showConfirmButton: false
+    });
+  }
+}
+
+function startSequentialScan() {
+  openBarcodeScanner((scannedSN) => {
+    appendSerialNumber(scannedSN);
+    setTimeout(() => {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'SN Berhasil Terbaca!',
+          html: `<div style="font-family: var(--font-mono); color: var(--primary); font-size: 1.1rem; font-weight: 800; margin: 10px 0;">${scannedSN}</div><p style="font-size: 0.84rem; color: #64748b;">Sekarang scan barcode <strong>MAC Address</strong> untuk unit ini:</p>`,
+          icon: 'info',
+          showCancelButton: true,
+          confirmButtonText: '<i class="bi bi-camera me-1"></i> Scan MAC Sekarang',
+          cancelButtonText: 'Lewati (Hanya SN)',
+          confirmButtonColor: '#059669',
+          cancelButtonColor: '#64748b'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            openBarcodeScanner((scannedMAC) => {
+              appendMacAddress(scannedMAC);
+            });
+          }
+        });
+      } else {
+        openBarcodeScanner((scannedMAC) => {
+          appendMacAddress(scannedMAC);
+        });
+      }
+    }, 450);
+  });
 }
 
 function openRmaModal(serialId, snNumber, matName, notes) {

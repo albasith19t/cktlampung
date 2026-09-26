@@ -339,15 +339,15 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `nik`, `name`, `role`, `department`, `avatar`, `status`, `created_at`) VALUES
-(1, 'admin', '$2y$10$whcawmpgeUj2MYXIbBMT2OIJdxGTFh6.XZuWxkUH9kZitRgzr0/2G', 'CKT-ADM-001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang', 'assets/img/avatars/admin.png', 'active', '2026-08-18 13:59:26'),
-(2, 'budi', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'CKT-TEK-001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek1.png', 'active', '2026-08-18 13:59:26'),
-(3, 'rian', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'CKT-TEK-002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek2.png', 'active', '2026-08-18 13:59:26'),
-(4, 'zaki', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'CKT-TEK-003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek3.png', 'active', '2026-08-18 13:59:26'),
-(5, 'dimas', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'CKT-TEK-004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek4.png', 'active', '2026-08-18 13:59:26'),
-(6, 'bayu', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'CKT-TEK-005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek5.png', 'active', '2026-08-18 13:59:26'),
-(7, 'juwadi', '$2y$10$cp6Foznr/w6EGrXbritUTeZ.gOYl59GM.qCEGw/gMcOO60w5uUi32', 'CKT-TEK-006', 'Juwadi', 'teknisi', 'Teknisi Lapangan', NULL, 'active', '2026-08-21 11:44:10'),
-(8, 'riski', '123456', 'CKT-TEK-007', 'Riski', 'teknisi', 'Teknis Lapangan', NULL, 'active', '2026-08-21 11:46:23'),
-(9, 'thoib', '123456', 'CKT-TEK-008', 'M Thoib', 'teknisi', 'Teknis Lapangan', NULL, 'active', '2026-08-21 11:46:23');
+(1, 'adm00001', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'ADM00001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang', 'assets/img/avatars/admin.png', 'active', '2026-08-18 13:59:26'),
+(2, 'tek00001', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek1.png', 'active', '2026-08-18 13:59:26'),
+(3, 'tek00002', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek2.png', 'active', '2026-08-18 13:59:26'),
+(4, 'tek00003', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek3.png', 'active', '2026-08-18 13:59:26'),
+(5, 'tek00004', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek4.png', 'active', '2026-08-18 13:59:26'),
+(6, 'tek00005', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek5.png', 'active', '2026-08-18 13:59:26'),
+(7, 'tek00006', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00006', 'Juwadi', 'teknisi', 'Teknisi Lapangan', NULL, 'active', '2026-08-21 11:44:10'),
+(8, 'tek00007', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00007', 'Riski', 'teknisi', 'Teknis Lapangan', NULL, 'active', '2026-08-21 11:46:23'),
+(9, 'tek00008', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00008', 'M Thoib', 'teknisi', 'Teknis Lapangan', NULL, 'active', '2026-08-21 11:46:23');
 
 --
 -- Indexes for dumped tables

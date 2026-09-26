@@ -145,7 +145,7 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
     <div style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
       <form method="GET" action="pengguna.php" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 240px; position: relative;">
-          <input type="text" name="search" class="form-control" placeholder="Cari nama, username, NIK, divisi..." value="<?= htmlspecialchars($searchFilter) ?>" style="padding-left: 36px;">
+          <input type="text" name="search" class="form-control" placeholder="Cari nama, ID Karyawan (8 digit), divisi..." value="<?= htmlspecialchars($searchFilter) ?>" style="padding-left: 36px;">
           <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
         </div>
 
@@ -190,8 +190,8 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
           <thead>
             <tr>
               <th style="width: 50px;">No</th>
-              <th>Nama Pengguna & NIK</th>
-              <th>Username</th>
+              <th>Nama Pengguna</th>
+              <th>ID Karyawan (Login)</th>
               <th>Peran / Role</th>
               <th>Divisi / Departemen</th>
               <th>Status Akun</th>
@@ -226,15 +226,15 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
                             <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: var(--primary); font-size: 0.65rem; padding: 2px 6px; margin-left: 4px;">Akun Anda</span>
                           <?php endif; ?>
                         </div>
-                        <small style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.76rem;">
-                          NIK: <?= htmlspecialchars($u['nik']) ?>
+                        <small style="color: var(--text-muted); font-size: 0.76rem;">
+                          ID: <strong style="font-family: var(--font-mono); color: var(--primary);"><?= htmlspecialchars($u['nik']) ?></strong>
                         </small>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span class="badge font-mono" style="background: rgba(0,0,0,0.04); border: 1px solid var(--border-color); color: var(--text-main); font-weight: 600;">
-                      @<?= htmlspecialchars($u['username'] ?: '-') ?>
+                    <span class="badge font-mono" style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); color: var(--primary); font-weight: 700; letter-spacing: 1px; font-size: 0.82rem;">
+                      <i class="bi bi-person-badge me-1"></i><?= htmlspecialchars($u['nik'] ?: $u['username']) ?>
                     </span>
                   </td>
                   <td>
@@ -350,44 +350,51 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label"><i class="bi bi-at text-primary me-1"></i> Username Login *</label>
-            <input type="text" name="username" id="userUsernameInput" class="form-control font-mono" placeholder="Contoh: budi" required>
-            <small style="color: var(--text-dim); font-size: 0.72rem;">Gunakan huruf kecil tanpa spasi.</small>
+            <label class="form-label"><i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan (8 Digit) *</label>
+            <input 
+              type="text" 
+              name="nik" 
+              id="userNikInput" 
+              class="form-control font-mono" 
+              placeholder="Contoh: TEK00006" 
+              maxlength="8" 
+              pattern="[A-Za-z0-9]{8}" 
+              required
+              style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px;"
+              oninput="this.value = this.value.toUpperCase(); document.getElementById('userUsernameInput').value = this.value.toLowerCase();"
+            >
+            <input type="hidden" name="username" id="userUsernameInput" value="">
+            <small style="color: var(--text-dim); font-size: 0.72rem;">Kombinasi huruf & angka tepat 8 digit (misal: <code>ADM00002</code>, <code>TEK00006</code>).</small>
           </div>
 
           <div class="form-group">
-            <label class="form-label"><i class="bi bi-card-heading text-primary me-1"></i> NIK / ID Karyawan *</label>
-            <input type="text" name="nik" id="userNikInput" class="form-control font-mono" placeholder="Contoh: CKT-TEK-006" required>
+            <label class="form-label"><i class="bi bi-shield-check text-primary me-1"></i> Peran Akun (Role) *</label>
+            <select name="role" id="userRoleSelect" class="form-select" required onchange="handleRoleChange(this.value)">
+              <option value="teknisi">Teknisi Lapangan</option>
+              <option value="admin_gudang">Admin Gudang</option>
+            </select>
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label"><i class="bi bi-person-badge text-primary me-1"></i> Peran Akun (Role) *</label>
-            <select name="role" id="userRoleSelect" class="form-select" required>
-              <option value="teknisi">Teknisi Lapangan</option>
-              <option value="admin_gudang">Admin Gudang</option>
-            </select>
-          </div>
-
-          <div class="form-group">
             <label class="form-label"><i class="bi bi-diagram-3 text-primary me-1"></i> Divisi / Departemen</label>
             <input type="text" name="department" id="userDeptInput" class="form-control" value="Teknis & Jaringan">
           </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label"><i class="bi bi-toggle-on text-primary me-1"></i> Status Akun</label>
+            <select name="status" id="userStatusSelect" class="form-select">
+              <option value="active">Aktif (Dapat Login ke Sistem)</option>
+              <option value="inactive">Nonaktif (Akses Diblokir)</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-group" id="passwordGroup">
-          <label class="form-label" id="passwordLabel"><i class="bi bi-lock-fill text-primary me-1"></i> Password Login *</label>
-          <input type="password" name="password" id="userPasswordInput" class="form-control" placeholder="Minimal 6 karakter" required>
-          <small id="passwordHelp" style="color: var(--text-dim); font-size: 0.72rem; display: none;">Kosongkan jika tidak ingin mengubah password akun.</small>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label"><i class="bi bi-toggle-on text-primary me-1"></i> Status Akun</label>
-          <select name="status" id="userStatusSelect" class="form-select">
-            <option value="active">Aktif (Dapat Login ke Sistem)</option>
-            <option value="inactive">Nonaktif (Akses Diblokir)</option>
-          </select>
+        <div class="form-group" id="passwordGroup" style="margin-top: 14px; margin-bottom: 0;">
+          <label class="form-label" id="passwordLabel"><i class="bi bi-lock-fill text-primary me-1"></i> Password Login</label>
+          <input type="password" name="password" id="userPasswordInput" class="form-control" placeholder="Default: 123456">
+          <small id="passwordHelp" style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px;">Default akun baru: <code>123456</code>. Kosongkan jika tidak ingin mengubah password.</small>
         </div>
       </div>
 
@@ -428,7 +435,7 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
         <div class="form-group" style="margin-bottom: 0;">
           <label class="form-label">Password Baru</label>
           <input type="text" name="new_password" class="form-control font-mono" value="123456" required>
-          <small style="color: var(--text-dim); font-size: 0.72rem;">Default: <code>123456</code> (Bisa diganti sesuai keinginan).</small>
+          <small style="color: var(--text-dim); font-size: 0.72rem;">Default: <code>123456</code> (Semua user default: 123456).</small>
         </div>
       </div>
 
@@ -450,6 +457,15 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
 </form>
 
 <script>
+function handleRoleChange(role) {
+  const deptInput = document.getElementById('userDeptInput');
+  if (role === 'admin_gudang') {
+    deptInput.value = 'Gudang & Logistik';
+  } else {
+    deptInput.value = 'Teknis & Jaringan';
+  }
+}
+
 function openAddUserModal() {
   document.getElementById('userAction').value = 'create';
   document.getElementById('userIdInput').value = '';
@@ -461,9 +477,9 @@ function openAddUserModal() {
   document.getElementById('userNikInput').value = '';
   document.getElementById('userRoleSelect').value = 'teknisi';
   document.getElementById('userDeptInput').value = 'Teknis & Jaringan';
-  document.getElementById('userPasswordInput').value = '';
-  document.getElementById('userPasswordInput').required = true;
-  document.getElementById('passwordHelp').style.display = 'none';
+  document.getElementById('userPasswordInput').value = '123456';
+  document.getElementById('userPasswordInput').placeholder = 'Default: 123456';
+  document.getElementById('passwordHelp').innerText = 'Password default otomatis diatur ke 123456 (dapat diubah pengguna nanti).';
   document.getElementById('userStatusSelect').value = 'active';
 
   const modal = document.getElementById('userModal');
@@ -477,13 +493,13 @@ function openEditUserModal(user) {
   document.getElementById('btnSubmitUser').innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Perubahan';
 
   document.getElementById('userNameInput').value = user.name || '';
-  document.getElementById('userUsernameInput').value = user.username || '';
   document.getElementById('userNikInput').value = user.nik || '';
+  document.getElementById('userUsernameInput').value = (user.username || user.nik || '').toLowerCase();
   document.getElementById('userRoleSelect').value = user.role || 'teknisi';
   document.getElementById('userDeptInput').value = user.department || 'Teknis & Jaringan';
   document.getElementById('userPasswordInput').value = '';
-  document.getElementById('userPasswordInput').required = false;
-  document.getElementById('passwordHelp').style.display = 'block';
+  document.getElementById('userPasswordInput').placeholder = 'Kosongkan jika tetap';
+  document.getElementById('passwordHelp').innerText = 'Kosongkan jika tidak ingin mengubah password akun.';
   document.getElementById('userStatusSelect').value = user.status || 'active';
 
   const modal = document.getElementById('userModal');

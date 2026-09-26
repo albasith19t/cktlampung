@@ -224,6 +224,7 @@ function initMySQLDatabase($pdo) {
         }
 
         seedDefaultAccounts($pdo);
+        migrateEmployeeIdsAndPasswords($pdo);
         consolidateActiveBonsForTechs($pdo);
     }
 }
@@ -425,6 +426,7 @@ function initSQLiteDatabase($pdo) {
     } catch (Exception $e) {}
 
     seedDefaultAccounts($pdo);
+    migrateEmployeeIdsAndPasswords($pdo);
     seedSampleOntSerials($pdo);
 }
 
@@ -452,11 +454,11 @@ function seedSampleOntSerials($pdo) {
 }
 
 // ---------------------------------------------------------
-// SEED 1 ADMIN & 5 TEKNISI (Hanya saat inisialisasi awal)
+// SEED 1 ADMIN & 5 TEKNISI DENGAN ID KARYAWAN 8 DIGIT & PASSWORD 123456
 // ---------------------------------------------------------
 function seedDefaultAccounts($pdo) {
     try {
-        // Jika data pengguna sudah ada, jangan pernah overwrite perubahan nama/data yang dibuat admin!
+        // Jika data pengguna sudah ada, jangan overwrite
         $count = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
         if ($count > 0) {
             return;
@@ -465,19 +467,16 @@ function seedDefaultAccounts($pdo) {
         return;
     }
 
-    // Password hash default:
-    // admin => admin123
-    // teknisi (budi, rian, zaki, dimas, bayu) => 123456 (support admin123 juga)
-    $hashAdmin = '$2y$10$whcawmpgeUj2MYXIbBMT2OIJdxGTFh6.XZuWxkUH9kZitRgzr0/2G'; // admin123
-    $hashTeknisi = '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi'; // 123456
+    // Password hash default: 123456 untuk semua pengguna
+    $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
 
     $defaultUsers = [
-        ['admin', $hashAdmin, 'CKT-ADM-001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang'],
-        ['budi', $hashTeknisi, 'CKT-TEK-001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan'],
-        ['rian', $hashTeknisi, 'CKT-TEK-002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan'],
-        ['zaki', $hashTeknisi, 'CKT-TEK-003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan'],
-        ['dimas', $hashTeknisi, 'CKT-TEK-004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan'],
-        ['bayu', $hashTeknisi, 'CKT-TEK-005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan']
+        ['adm00001', $hashDefault, 'ADM00001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang'],
+        ['tek00001', $hashDefault, 'TEK00001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan'],
+        ['tek00002', $hashDefault, 'TEK00002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan'],
+        ['tek00003', $hashDefault, 'TEK00003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan'],
+        ['tek00004', $hashDefault, 'TEK00004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan'],
+        ['tek00005', $hashDefault, 'TEK00005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan']
     ];
 
     $stmtInsert = $pdo->prepare("INSERT INTO users (username, password, nik, name, role, department) VALUES (?, ?, ?, ?, ?, ?)");
@@ -486,6 +485,47 @@ function seedDefaultAccounts($pdo) {
             $stmtInsert->execute($u);
         } catch (Exception $e) {}
     }
+}
+
+/**
+ * Otomatis migrasi ID Karyawan menjadi 8 Digit Alfanumerik (Huruf & Angka)
+ * dan pastikan seluruh user memiliki password default 123456
+ */
+function migrateEmployeeIdsAndPasswords($pdo) {
+    try {
+        $users = $pdo->query("SELECT id, username, nik, role, password FROM users ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($users)) return;
+
+        $needsMigration = false;
+        foreach ($users as $u) {
+            if (strpos($u['nik'] ?? '', 'CKT-') !== false || strlen($u['nik'] ?? '') !== 8) {
+                $needsMigration = true;
+                break;
+            }
+        }
+
+        if ($needsMigration) {
+            $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
+            $techCounter = 1;
+            $admCounter = 1;
+
+            foreach ($users as $u) {
+                $uid = (int)$u['id'];
+                $role = $u['role'] ?? 'teknisi';
+                $uname = strtolower($u['username'] ?? '');
+
+                if ($role === 'admin_gudang' || $role === 'admin' || $uname === 'admin') {
+                    $newNik = sprintf('ADM%05d', $admCounter++);
+                } else {
+                    $newNik = sprintf('TEK%05d', $techCounter++);
+                }
+                $newUname = strtolower($newNik);
+
+                $st = $pdo->prepare("UPDATE users SET nik = ?, username = ?, password = ? WHERE id = ?");
+                $st->execute([$newNik, $newUname, $hashDefault, $uid]);
+            }
+        }
+    } catch (Exception $e) {}
 }
 
 // ---------------------------------------------------------

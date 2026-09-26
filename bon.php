@@ -8,6 +8,7 @@ $pageHeaderTitle = "Bon & Serah Terima Material Lapangan";
 $pageHeaderSubtitle = "Pencatatan pengeluaran material oleh Admin Gudang kepada teknisi lapangan";
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/pagination.php';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
@@ -25,9 +26,7 @@ if ($isTeknisi) {
 }
 
 // Build Query
-$sql = "
-    SELECT b.*, u.name as technician_name, u.nik as technician_nik,
-           ua.name as approver_name
+$baseFromWhere = "
     FROM bon_requests b
     JOIN users u ON b.user_id = u.id
     LEFT JOIN users ua ON b.approved_by = ua.id
@@ -36,25 +35,25 @@ $sql = "
 $params = [];
 
 if ($isTeknisi) {
-    $sql .= " AND b.user_id = ?";
+    $baseFromWhere .= " AND b.user_id = ?";
     $params[] = $currentUser['id'];
 } elseif ($techFilter > 0) {
-    $sql .= " AND b.user_id = ?";
+    $baseFromWhere .= " AND b.user_id = ?";
     $params[] = $techFilter;
 }
 
 if ($statusFilter !== '') {
-    $sql .= " AND b.status = ?";
+    $baseFromWhere .= " AND b.status = ?";
     $params[] = $statusFilter;
 }
 
 if ($typeFilter !== '') {
-    $sql .= " AND b.request_type = ?";
+    $baseFromWhere .= " AND b.request_type = ?";
     $params[] = $typeFilter;
 }
 
 if ($searchFilter !== '') {
-    $sql .= " AND (b.bon_number LIKE ? OR b.customer_name LIKE ? OR b.customer_id LIKE ? OR u.name LIKE ? OR b.work_order_number LIKE ?)";
+    $baseFromWhere .= " AND (b.bon_number LIKE ? OR b.customer_name LIKE ? OR b.customer_id LIKE ? OR u.name LIKE ? OR b.work_order_number LIKE ?)";
     $like = '%' . $searchFilter . '%';
     $params[] = $like;
     $params[] = $like;
@@ -63,7 +62,17 @@ if ($searchFilter !== '') {
     $params[] = $like;
 }
 
-$sql .= " ORDER BY b.created_at DESC";
+// Count total for pagination
+$countStmt = $pdo->prepare("SELECT COUNT(*) " . $baseFromWhere);
+$countStmt->execute($params);
+$totalBonsCount = (int)$countStmt->fetchColumn();
+
+// Pagination
+$bonPerPage = 15;
+$bonCurrentPage = max(1, (int)($_GET['page'] ?? 1));
+$bonPg = paginate($totalBonsCount, $bonCurrentPage, $bonPerPage);
+
+$sql = "SELECT b.*, u.name as technician_name, u.nik as technician_nik, ua.name as approver_name " . $baseFromWhere . " ORDER BY b.created_at DESC LIMIT " . $bonPg['limit'] . " OFFSET " . $bonPg['offset'];
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $bons = $stmt->fetchAll();
@@ -805,7 +814,7 @@ if ($detailId > 0) {
           <div class="table-card-title">
             <i class="bi bi-journal-text text-primary"></i> Data Riwayat Surat Bon Material
           </div>
-          <span style="font-size: 0.8rem; color: var(--text-dim);">Menampilkan <?= count($bons) ?> data</span>
+          <span style="font-size: 0.8rem; color: var(--text-dim);"><?= $bonPg['from'] ?>-<?= $bonPg['to'] ?> dari <?= number_format($bonPg['total_items']) ?> data</span>
         </div>
 
         <div class="table-responsive mobile-cards-view">
@@ -882,6 +891,12 @@ if ($detailId > 0) {
             </tbody>
           </table>
         </div>
+        <?php
+          $bonPgParams = $_GET;
+          unset($bonPgParams['page']);
+          $bonPgBase = 'bon.php' . (!empty($bonPgParams) ? '?' . http_build_query($bonPgParams) : '');
+          renderPagination($bonPg, $bonPgBase);
+        ?>
       </div>
     <?php endif; ?>
 

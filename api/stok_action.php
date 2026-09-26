@@ -41,9 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $referenceId = trim($_POST['reference_id'] ?? 'PO-RESTOCK-' . date('Ymd'));
             $notes = trim($_POST['notes'] ?? 'Penerimaan stok baru dari distributor/supplier');
             $newSerialsRaw = trim($_POST['new_serials'] ?? '');
+            $newMacsRaw = trim($_POST['new_macs'] ?? '');
 
-            if ($materialId <= 0 || $qty <= 0) {
-                throw new Exception("Pilih material dan masukkan jumlah kuantiti yang valid.");
+            if ($materialId <= 0) {
+                throw new Exception("Pilih tipe material yang valid.");
             }
 
             // Fetch material
@@ -53,6 +54,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$mat) {
                 throw new Exception("Material tidak ditemukan.");
+            }
+
+            // Process Serial Numbers & MAC Address if ONT
+            $pairs = [];
+            if ($mat['is_serialized'] == 1 && !empty($newSerialsRaw)) {
+                $serialLines = array_values(array_filter(array_map('trim', preg_split('/[\r\n]+/', $newSerialsRaw)), function($l) { return $l !== ''; }));
+                $macLines = array_values(array_filter(array_map('trim', preg_split('/[\r\n]+/', $newMacsRaw)), function($l) { return $l !== ''; }));
+
+                if (!empty($macLines)) {
+                    // Berpasangan baris per baris: kiri = SN, kanan = MAC
+                    foreach ($serialLines as $idx => $sn) {
+                        $mac = $macLines[$idx] ?? null;
+                        $pairs[] = ['sn' => $sn, 'mac' => $mac];
+                    }
+                } else {
+                    // Cek jika ada spasi/tab/koma di dalam satu baris (misal: "ZTEGDEAF144B D8855EE71889")
+                    $hasMultiToken = false;
+                    foreach ($serialLines as $l) {
+                        if (preg_match('/[\s,;\t]+/', $l)) {
+                            $hasMultiToken = true;
+                            break;
+                        }
+                    }
+
+                    if ($hasMultiToken) {
+                        foreach ($serialLines as $l) {
+                            $parts = preg_split('/[\s,;\t]+/', $l, 2);
+                            $pairs[] = [
+                                'sn' => $parts[0] ?? '',
+                                'mac' => $parts[1] ?? null
+                            ];
+                        }
+                    } elseif (count($serialLines) >= 2 && count($serialLines) % 2 === 0) {
+                        // Cek jika format selang-seling (baris 1 = SN, baris 2 = MAC, dst)
+                        $isAlternating = true;
+                        for ($i = 1; $i < count($serialLines); $i += 2) {
+                            $cleanMac = str_replace([':', '-', '.'], '', $serialLines[$i]);
+                            if (!ctype_xdigit($cleanMac) || strlen($cleanMac) < 10) {
+                                $isAlternating = false;
+                                break;
+                            }
+                        }
+                        if ($isAlternating) {
+                            for ($i = 0; $i < count($serialLines); $i += 2) {
+                                $pairs[] = [
+                                    'sn' => $serialLines[$i],
+                                    'mac' => $serialLines[$i + 1]
+                                ];
+                            }
+                        } else {
+                            foreach ($serialLines as $sn) {
+                                $pairs[] = ['sn' => $sn, 'mac' => null];
+                            }
+                        }
+                    } else {
+                        foreach ($serialLines as $sn) {
+                            $pairs[] = ['sn' => $sn, 'mac' => null];
+                        }
+                    }
+                }
+
+                // Jika kuantiti belum diisi atau kurang, sesuaikan dengan jumlah SN yang diinput
+                if ($qty <= 0 || $qty < count($pairs)) {
+                    $qty = count($pairs);
+                }
+            }
+
+            if ($qty <= 0) {
+                throw new Exception("Masukkan jumlah kuantiti atau input serial number yang valid.");
             }
 
             $stockBefore = (int)$mat['stock_current'];
@@ -77,18 +147,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $notes
             ]);
 
-            // 3. Insert Serial Numbers if ONT
-            if (!empty($newSerialsRaw) && $mat['is_serialized'] == 1) {
-                $serials = preg_split('/[\r\n,]+/', $newSerialsRaw);
-                $stmtSN = $pdo->prepare("INSERT OR IGNORE INTO material_serials (material_id, serial_number, status, received_date) VALUES (?, ?, 'available', CURRENT_TIMESTAMP)");
-                // In MySQL we use INSERT IGNORE
-                if ($active_driver === 'mysql') {
-                    $stmtSN = $pdo->prepare("INSERT IGNORE INTO material_serials (material_id, serial_number, status, received_date) VALUES (?, ?, 'available', CURRENT_TIMESTAMP)");
-                }
-                foreach ($serials as $sn) {
-                    $sn = trim($sn);
+            // 3. Insert Serial Numbers & MAC Address if ONT
+            if (!empty($pairs)) {
+                $ignoreClause = ($active_driver === 'mysql') ? 'INSERT IGNORE' : 'INSERT OR IGNORE';
+                $stmtSN = $pdo->prepare("{$ignoreClause} INTO material_serials (material_id, serial_number, mac_address, status, received_date) VALUES (?, ?, ?, 'available', CURRENT_TIMESTAMP)");
+
+                foreach ($pairs as $p) {
+                    $sn = strtoupper(trim($p['sn']));
+                    $mac = !empty($p['mac']) ? strtoupper(trim($p['mac'])) : null;
                     if (!empty($sn)) {
-                        $stmtSN->execute([$materialId, $sn]);
+                        $stmtSN->execute([$materialId, $sn, $mac]);
                     }
                 }
             }

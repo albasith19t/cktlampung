@@ -31,22 +31,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. CSRF Validation
         $error = "Sesi keamanan formulir telah kedaluwarsa. Silakan refresh halaman dan coba kembali.";
     } else {
-        $username = trim($_POST['username'] ?? '');
+        $employeeId = strtoupper(trim($_POST['username'] ?? ''));
         $password = trim($_POST['password'] ?? '');
 
-        if (empty($username) || empty($password)) {
-            $error = "Username/NIK dan Password wajib diisi.";
+        if (empty($employeeId) || empty($password)) {
+            $error = "ID Karyawan (8 Digit) dan Password wajib diisi.";
         } else {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR nik = ? LIMIT 1");
-            $stmt->execute([$username, $username]);
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE UPPER(nik) = ? OR UPPER(username) = ? LIMIT 1");
+            $stmt->execute([$employeeId, $employeeId]);
             $user = $stmt->fetch();
 
             if ($user) {
                 $isValid = false;
                 if (password_verify($password, $user['password'])) {
                     $isValid = true;
-                } elseif ($password === 'admin123' || $password === '123456') {
-                    // Fallback direct match for demo credentials & auto-update to valid bcrypt hash
+                } elseif ($password === '123456' || $password === 'admin123') {
+                    // Fallback match untuk default password & sinkronisasi ke bcrypt hash
                     $newHash = password_hash($password, PASSWORD_BCRYPT);
                     $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
                     $up->execute([$newHash, $user['id']]);
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = "Terlalu banyak percobaan gagal (5x). Form login dikunci sementara selama 3 menit demi keamanan.";
                 } else {
                     $remainingAttempts = 5 - $_SESSION['login_attempts'];
-                    $error = "Akun dengan username/NIK '{$username}' tidak ditemukan. (Sisa percobaan: {$remainingAttempts})";
+                    $error = "Akun dengan ID Karyawan '{$employeeId}' tidak ditemukan. (Sisa percobaan: {$remainingAttempts})";
                 }
             }
         }
@@ -174,10 +174,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- Right Side: Login Form -->
   <div class="login-form-wrapper">
-    <div style="text-align: center; margin-bottom: 28px;">
+    <div style="text-align: center; margin-bottom: 24px;">
       <img src="assets/img/logo-citratel-cropped.png" alt="Citratel" style="height: 80px; width: auto; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
       <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.4px;">Masuk ke Sistem</h2>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Masukkan username dan password akun Anda</p>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Gunakan ID Karyawan (8 Digit) dan Password akun Anda</p>
     </div>
 
     <?php if (!empty($error)): ?>
@@ -190,20 +190,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" action="login.php">
       <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
       <div class="form-group">
-        <label class="form-label" for="username">Username atau NIK</label>
+        <label class="form-label" for="username">
+          <i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan (8 Karakter)
+        </label>
         <div style="position: relative;">
           <input 
             type="text" 
             id="username" 
             name="username" 
             class="form-control" 
+            placeholder="Contoh: ADM00001 / TEK00001"
+            maxlength="8"
+            autocomplete="username"
+            autocapitalize="characters"
             value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" 
             required 
             autofocus
-            style="padding-left: 38px;"
+            style="padding-left: 38px; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; letter-spacing: 1px;"
           >
-          <i class="bi bi-person" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
+          <i class="bi bi-person-badge" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
         </div>
+        <small style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; display: block;">
+          Kombinasi huruf & angka 8 digit (misal: <code>ADM00001</code>, <code>TEK00001</code>).
+        </small>
       </div>
 
       <div class="form-group">
@@ -216,11 +225,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             id="password" 
             name="password" 
             class="form-control" 
+            placeholder="Default: 123456"
             required
             style="padding-left: 38px; padding-right: 40px;"
           >
           <i class="bi bi-lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
-          <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px;">
+          <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px;" aria-label="Toggle password">
             <i class="bi bi-eye" id="pwdToggleIcon"></i>
           </button>
         </div>
@@ -231,6 +241,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </button>
     </form>
 
+    <!-- Info Akses Akun Default -->
+    <div style="margin-top: 22px; padding: 12px 14px; background: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.18); border-radius: var(--radius-md);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-weight: 700; color: var(--text-main); font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
+          <i class="bi bi-key-fill text-primary"></i> Akses Akun Default
+        </span>
+        <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700; font-size: 0.7rem;">
+          Password: 123456
+        </span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: var(--font-mono); font-size: 0.73rem;">
+        <button type="button" onclick="fillLogin('ADM00001')" class="btn-secondary" style="padding: 6px 8px; justify-content: space-between; background: #ffffff; text-align: left; font-size: 0.72rem;">
+          <span><strong>ADM00001</strong> (Admin)</span>
+          <i class="bi bi-arrow-up-right text-primary"></i>
+        </button>
+        <button type="button" onclick="fillLogin('TEK00001')" class="btn-secondary" style="padding: 6px 8px; justify-content: space-between; background: #ffffff; text-align: left; font-size: 0.72rem;">
+          <span><strong>TEK00001</strong> (Teknisi)</span>
+          <i class="bi bi-arrow-up-right text-success"></i>
+        </button>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -248,6 +279,14 @@ function togglePasswordVisibility() {
     icon.classList.remove('bi-eye-slash');
     icon.classList.add('bi-eye');
   }
+}
+
+function fillLogin(id) {
+  const userInput = document.getElementById('username');
+  const pwdInput = document.getElementById('password');
+  userInput.value = id;
+  pwdInput.value = '123456';
+  userInput.focus();
 }
 </script>
 

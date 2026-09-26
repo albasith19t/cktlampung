@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/pagination.php';
 
 $currentUser = getCurrentUser($pdo);
 $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
@@ -24,34 +25,53 @@ $techFilter = (int)($_GET['tech_id'] ?? 0);
 $statusFilter = $_GET['status'] ?? '';
 $export = $_GET['export'] ?? '';
 
-// Build Query
-$sql = "
-    SELECT b.*, u.name as technician_name, u.nik as technician_nik,
-           ua.name as approver_name
-    FROM bon_requests b
-    JOIN users u ON b.user_id = u.id
-    LEFT JOIN users ua ON b.approved_by = ua.id
-    WHERE DATE(b.created_at) >= ? AND DATE(b.created_at) <= ?
-";
+// Build base WHERE clause
+$baseWhere = " WHERE DATE(b.created_at) >= ? AND DATE(b.created_at) <= ?";
 $params = [$startDate, $endDate];
 
 if ($techFilter > 0) {
-    $sql .= " AND b.user_id = ?";
+    $baseWhere .= " AND b.user_id = ?";
     $params[] = $techFilter;
 }
 
 if (!empty($statusFilter)) {
-    $sql .= " AND b.status = ?";
+    $baseWhere .= " AND b.status = ?";
     $params[] = $statusFilter;
 }
 
-$sql .= " ORDER BY b.created_at DESC";
+$baseFrom = "FROM bon_requests b
+    JOIN users u ON b.user_id = u.id
+    LEFT JOIN users ua ON b.approved_by = ua.id";
+
+// Count total for pagination
+$countStmt = $pdo->prepare("SELECT COUNT(*) " . $baseFrom . $baseWhere);
+$countStmt->execute($params);
+$totalFilteredBons = (int)$countStmt->fetchColumn();
+
+// Pagination
+$laporanPerPage = 20;
+$laporanCurrentPage = max(1, (int)($_GET['page'] ?? 1));
+$laporanPg = paginate($totalFilteredBons, $laporanCurrentPage, $laporanPerPage);
+
+// Data query with pagination
+$sql = "SELECT b.*, u.name as technician_name, u.nik as technician_nik, ua.name as approver_name " 
+     . $baseFrom . $baseWhere 
+     . " ORDER BY b.created_at DESC LIMIT " . $laporanPg['limit'] . " OFFSET " . $laporanPg['offset'];
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $reportBons = $stmt->fetchAll();
 
+// Full query for export (no pagination)
+$sqlFull = "SELECT b.*, u.name as technician_name, u.nik as technician_nik, ua.name as approver_name " 
+         . $baseFrom . $baseWhere . " ORDER BY b.created_at DESC";
+
 // Handle CSV Export
 if ($export === 'csv') {
+    // Fetch ALL data for export (no pagination)
+    $stmtAll = $pdo->prepare($sqlFull);
+    $stmtAll->execute($params);
+    $reportBons = $stmtAll->fetchAll();
+
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="Laporan_Bon_CKT_Lampung_' . date('Ymd_His') . '.csv"');
     
@@ -95,13 +115,16 @@ require_once __DIR__ . '/includes/sidebar.php';
 $allTechs = $pdo->query("SELECT id, name, nik FROM users WHERE role = 'teknisi' ORDER BY name ASC")->fetchAll();
 
 // Calculate Totals for Filtered Period
-$totalBonCount = count($reportBons);
+$totalBonCount = $totalFilteredBons;
 $totalOntCount = 0;
 $totalCablesCount = 0;
 $totalAccCount = 0;
 
-if (!empty($reportBons)) {
-    $bonIds = array_column($reportBons, 'id');
+// Use total query for KPI (all bons in filtered period, not just current page)
+if ($totalBonCount > 0) {
+    $allBonIds = $pdo->prepare("SELECT b.id " . $baseFrom . $baseWhere . " ORDER BY b.created_at DESC");
+    $allBonIds->execute($params);
+    $bonIds = array_column($allBonIds->fetchAll(), 'id');
     $inPlaceholders = implode(',', array_fill(0, count($bonIds), '?'));
     
     $stmtMatCount = $pdo->prepare("
@@ -224,7 +247,7 @@ if (!empty($reportBons)) {
         <div class="table-card-title">
           <i class="bi bi-table text-primary"></i> Data Rincian Bon Material Lapangan
         </div>
-        <span style="font-size: 0.8rem; color: var(--text-dim);"><?= count($reportBons) ?> Data Ditemukan</span>
+        <span style="font-size: 0.8rem; color: var(--text-dim);"><?= $laporanPg['from'] ?>-<?= $laporanPg['to'] ?> dari <?= number_format($laporanPg['total_items']) ?> Data</span>
       </div>
 
       <div class="table-responsive mobile-cards-view">
@@ -308,6 +331,12 @@ if (!empty($reportBons)) {
           </tbody>
         </table>
       </div>
+      <?php
+        $laporanPgParams = $_GET;
+        unset($laporanPgParams['page']);
+        $laporanPgBase = 'laporan.php' . (!empty($laporanPgParams) ? '?' . http_build_query($laporanPgParams) : '');
+        renderPagination($laporanPg, $laporanPgBase);
+      ?>
     </div>
 
   </main>

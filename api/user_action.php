@@ -38,36 +38,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         try {
             $name = trim($_POST['name'] ?? '');
+            $nik = strtoupper(trim($_POST['nik'] ?? ''));
             $username = trim(strtolower($_POST['username'] ?? ''));
-            $nik = trim($_POST['nik'] ?? '');
+            if (empty($username)) {
+                $username = strtolower($nik);
+            }
             $role = trim($_POST['role'] ?? 'teknisi');
             $department = trim($_POST['department'] ?? 'Teknis & Jaringan');
             $password = trim($_POST['password'] ?? '');
+            if (empty($password)) {
+                $password = '123456';
+            }
             $status = trim($_POST['status'] ?? 'active');
 
-            if (empty($name) || empty($username) || empty($nik) || empty($password)) {
-                throw new Exception("Semua kolom (Nama, Username, NIK, dan Password) wajib diisi.");
+            if (empty($name) || empty($nik)) {
+                throw new Exception("Nama Lengkap dan ID Karyawan wajib diisi.");
+            }
+
+            // Validasi format ID Karyawan tepat 8 digit huruf & angka
+            if (!preg_match('/^[A-Za-z0-9]{8}$/', $nik)) {
+                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: ADM00002, TEK00006).");
             }
 
             if (!in_array($role, ['admin_gudang', 'teknisi'])) {
                 $role = 'teknisi';
             }
 
-            // Cek duplikasi username atau NIK
-            $stmtCheck = $pdo->prepare("SELECT id, username, nik FROM users WHERE username = ? OR nik = ? LIMIT 1");
-            $stmtCheck->execute([$username, $nik]);
+            // Cek duplikasi ID Karyawan (nik) atau username
+            $stmtCheck = $pdo->prepare("SELECT id, username, nik FROM users WHERE nik = ? OR username = ? LIMIT 1");
+            $stmtCheck->execute([$nik, $username]);
             $existing = $stmtCheck->fetch();
 
             if ($existing) {
+                if ($existing['nik'] === $nik) {
+                    throw new Exception("ID Karyawan '{$nik}' sudah terdaftar dalam sistem.");
+                }
                 if ($existing['username'] === $username) {
                     throw new Exception("Username '{$username}' sudah digunakan oleh pengguna lain.");
                 }
-                if ($existing['nik'] === $nik) {
-                    throw new Exception("NIK / ID Karyawan '{$nik}' sudah terdaftar dalam sistem.");
-                }
             }
 
-            // Hash password dengan Bcrypt
+            // Hash password dengan Bcrypt (default 123456)
             $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
             $stmtInsert = $pdo->prepare("
@@ -87,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['flash_message'] = [
                 'type' => 'success',
                 'title' => 'Pengguna Berhasil Ditambahkan!',
-                'text' => "Akun {$role} atas nama '{$name}' (Username: {$username}) berhasil dibuat."
+                'text' => "Akun {$role} atas nama '{$name}' (ID Karyawan: {$nik}) berhasil dibuat dengan password default 123456."
             ];
             header("Location: ../pengguna.php");
             exit;
@@ -110,15 +121,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $userId = (int)($_POST['user_id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
+            $nik = strtoupper(trim($_POST['nik'] ?? ''));
             $username = trim(strtolower($_POST['username'] ?? ''));
-            $nik = trim($_POST['nik'] ?? '');
+            if (empty($username)) {
+                $username = strtolower($nik);
+            }
             $role = trim($_POST['role'] ?? 'teknisi');
             $department = trim($_POST['department'] ?? 'Teknis & Jaringan');
             $password = trim($_POST['password'] ?? '');
             $status = trim($_POST['status'] ?? 'active');
 
-            if ($userId <= 0 || empty($name) || empty($username) || empty($nik)) {
+            if ($userId <= 0 || empty($name) || empty($nik)) {
                 throw new Exception("Data pengguna tidak valid atau ada kolom kosong.");
+            }
+
+            // Validasi format ID Karyawan tepat 8 digit huruf & angka
+            if (!preg_match('/^[A-Za-z0-9]{8}$/', $nik)) {
+                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: ADM00002, TEK00006).");
             }
 
             // Cek apakah user ada
@@ -130,17 +149,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("Pengguna tidak ditemukan.");
             }
 
-            // Cek duplikasi username/NIK dengan user lain
-            $stmtCheck = $pdo->prepare("SELECT id, username, nik FROM users WHERE (username = ? OR nik = ?) AND id != ? LIMIT 1");
-            $stmtCheck->execute([$username, $nik, $userId]);
+            // Cek duplikasi ID Karyawan / username dengan user lain
+            $stmtCheck = $pdo->prepare("SELECT id, username, nik FROM users WHERE (nik = ? OR username = ?) AND id != ? LIMIT 1");
+            $stmtCheck->execute([$nik, $username, $userId]);
             $duplicate = $stmtCheck->fetch();
 
             if ($duplicate) {
+                if ($duplicate['nik'] === $nik) {
+                    throw new Exception("ID Karyawan '{$nik}' sudah terdaftar untuk pengguna lain.");
+                }
                 if ($duplicate['username'] === $username) {
                     throw new Exception("Username '{$username}' sudah digunakan oleh pengguna lain.");
-                }
-                if ($duplicate['nik'] === $nik) {
-                    throw new Exception("NIK '{$nik}' sudah terdaftar untuk pengguna lain.");
                 }
             }
 

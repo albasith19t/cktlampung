@@ -30,14 +30,14 @@ CREATE TABLE `users` (
   UNIQUE KEY `uk_nik` (`nik`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Seed Data: 1 Admin Gudang + 5 Teknisi (Password: 'admin123' untuk admin, '123456' untuk teknisi)
+-- Seed Data: 1 Admin Gudang + 5 Teknisi (ID Karyawan 8 Digit, Password default: 123456)
 INSERT INTO `users` (`id`, `username`, `password`, `nik`, `name`, `role`, `department`, `avatar`) VALUES
-(1, 'admin', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-ADM-001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang', 'assets/img/avatars/admin.png'),
-(2, 'budi', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-TEK-001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek1.png'),
-(3, 'rian', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-TEK-002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek2.png'),
-(4, 'zaki', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-TEK-003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek3.png'),
-(5, 'dimas', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-TEK-004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek4.png'),
-(6, 'bayu', '$2y$10$wKqK.Lp5Z3p3t2n5B.o0xO6B6rM8D6yH7cW9dE8fG1hJ2kL3mN4oP', 'CKT-TEK-005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek5.png');
+(1, 'adm00001', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'ADM00001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang', 'assets/img/avatars/admin.png'),
+(2, 'tek00001', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek1.png'),
+(3, 'tek00002', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek2.png'),
+(4, 'tek00003', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek3.png'),
+(5, 'tek00004', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek4.png'),
+(6, 'tek00005', '$2y$10$SHu/56JpiDFAL9hHied1kulXjeqPqcHk7/T2EicEdgXhMBpYyKQTi', 'TEK00005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan', 'assets/img/avatars/tek5.png');
 
 -- ---------------------------------------------------------
 -- 2. TABEL: categories (Kategori Material Gudang)

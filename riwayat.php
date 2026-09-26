@@ -9,6 +9,7 @@ $pageHeaderTitle = "Riwayat Pemasangan Teknisi";
 $pageHeaderSubtitle = "Daftar histori pelaporan ONT, hasil pemasangan pelanggan, unit bad, dan penggantian perangkat (change).";
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/pagination.php';
 
 $currentUser = getCurrentUser($pdo);
 if (empty($currentUser)) {
@@ -25,11 +26,8 @@ $searchFilter = trim($_GET['search'] ?? '');
 $techFilter = (int)($_GET['tech_id'] ?? 0);
 $monthFilter = $_GET['month'] ?? ''; // YYYY-MM
 
-// Base Query
-$sql = "
-    SELECT ms.*, m.name as material_name, m.code as material_code, m.brand, m.model_type,
-           b.bon_number, b.id as bon_id, b.request_type, b.area_zone,
-           u.name as technician_name, u.nik as technician_nik
+// Base WHERE clause (shared between count & data query)
+$baseFrom = "
     FROM material_serials ms
     JOIN materials m ON ms.material_id = m.id
     JOIN bon_requests b ON ms.bon_id = b.id
@@ -39,36 +37,61 @@ $sql = "
 $params = [];
 
 if ($isTeknisi) {
-    $sql .= " AND b.user_id = ?";
+    $baseFrom .= " AND b.user_id = ?";
     $params[] = $currentUser['id'];
 } elseif ($techFilter > 0) {
-    $sql .= " AND b.user_id = ?";
+    $baseFrom .= " AND b.user_id = ?";
     $params[] = $techFilter;
 }
 
 if (!empty($statusFilter)) {
-    $sql .= " AND ms.status = ?";
+    $baseFrom .= " AND ms.status = ?";
     $params[] = $statusFilter;
 }
 
 if (!empty($monthFilter)) {
-    $sql .= " AND ms.installed_at LIKE ?";
+    $baseFrom .= " AND ms.installed_at LIKE ?";
     $params[] = $monthFilter . '%';
 }
 
 if (!empty($searchFilter)) {
-    $sql .= " AND (ms.serial_number LIKE ? OR ms.customer_name LIKE ? OR ms.customer_id LIKE ? OR ms.customer_address LIKE ? OR b.bon_number LIKE ? OR u.name LIKE ? OR ms.installed_notes LIKE ?)";
+    $baseFrom .= " AND (ms.serial_number LIKE ? OR ms.customer_name LIKE ? OR ms.customer_id LIKE ? OR ms.customer_address LIKE ? OR b.bon_number LIKE ? OR u.name LIKE ? OR ms.installed_notes LIKE ?)";
     $like = '%' . $searchFilter . '%';
     $params = array_merge($params, [$like, $like, $like, $like, $like, $like, $like]);
 }
 
-$sql .= " ORDER BY ms.installed_at DESC, ms.id DESC";
+// Full data query (for export - no pagination)
+$sqlFull = "SELECT ms.*, m.name as material_name, m.code as material_code, m.brand, m.model_type,
+           b.bon_number, b.id as bon_id, b.request_type, b.area_zone,
+           u.name as technician_name, u.nik as technician_nik
+    " . $baseFrom . " ORDER BY ms.installed_at DESC, ms.id DESC";
+
+// Count total for pagination
+$countStmt = $pdo->prepare("SELECT COUNT(*) " . $baseFrom);
+$countStmt->execute($params);
+$totalFiltered = (int)$countStmt->fetchColumn();
+
+// Pagination
+$perPage = 20;
+$currentPageNum = max(1, (int)($_GET['page'] ?? 1));
+$pg = paginate($totalFiltered, $currentPageNum, $perPage);
+
+// Data query with LIMIT
+$sql = "SELECT ms.*, m.name as material_name, m.code as material_code, m.brand, m.model_type,
+           b.bon_number, b.id as bon_id, b.request_type, b.area_zone,
+           u.name as technician_name, u.nik as technician_nik
+    " . $baseFrom . " ORDER BY ms.installed_at DESC, ms.id DESC LIMIT " . $pg['limit'] . " OFFSET " . $pg['offset'];
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $historyList = $stmt->fetchAll();
 
 // Handle CSV/Excel Export (Download langsung jika parameter export ada)
 if (isset($_GET['export']) && in_array($_GET['export'], ['csv', 'excel'])) {
+    // For export: fetch ALL data without pagination
+    $stmtAll = $pdo->prepare($sqlFull);
+    $stmtAll->execute($params);
+    $historyList = $stmtAll->fetchAll();
+
     $filename = "Rekap_Pemasangan_CKT_" . date('Ymd_His') . ".csv";
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -292,7 +315,7 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
         <div class="table-card-title">
           <i class="bi bi-list-check text-primary"></i> Rekapitulasi Riwayat Pemasangan
         </div>
-        <span style="font-size: 0.82rem; color: var(--text-dim);">Menampilkan <?= count($historyList) ?> pekerjaan</span>
+        <span style="font-size: 0.82rem; color: var(--text-dim);">Menampilkan <?= $pg['from'] ?>-<?= $pg['to'] ?> dari <?= number_format($pg['total_items']) ?> pekerjaan</span>
       </div>
 
       <div class="table-responsive mobile-cards-view">
@@ -420,6 +443,13 @@ $allTechnicians = $isAdmin ? $pdo->query("SELECT id, name, nik FROM users WHERE 
           </tbody>
         </table>
       </div>
+      <?php
+        // Build pagination base URL preserving current filters
+        $paginationParams = $_GET;
+        unset($paginationParams['page']);
+        $paginationBase = 'riwayat.php' . (!empty($paginationParams) ? '?' . http_build_query($paginationParams) : '');
+        renderPagination($pg, $paginationBase);
+      ?>
     </div>
 
   </main>
