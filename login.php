@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div style="text-align: center; margin-bottom: 24px;">
       <img src="assets/img/logo-citratel-cropped.png" alt="Citratel" style="height: 80px; width: auto; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
       <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.4px;">Masuk ke Sistem</h2>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Gunakan ID Karyawan (8 Digit) dan Password akun Anda</p>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">Masukkan ID Karyawan dan password akun Anda</p>
     </div>
 
     <?php if (!empty($error)): ?>
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
       <div class="form-group">
         <label class="form-label" for="username">
-          <i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan (8 Karakter)
+          <i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan
         </label>
         <div style="position: relative;">
           <input 
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             id="username" 
             name="username" 
             class="form-control" 
-            placeholder="Contoh: C2506130"
+            placeholder="Masukkan ID Karyawan"
             maxlength="8"
             autocomplete="username"
             autocapitalize="characters"
@@ -210,9 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
           <i class="bi bi-person-badge" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
         </div>
-        <small style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; display: block;">
-          Kombinasi 8 karakter huruf & angka (misal: <code>C2506130</code>).
-        </small>
       </div>
 
       <div class="form-group">
@@ -225,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             id="password" 
             name="password" 
             class="form-control" 
-            placeholder="Default: 123456"
+            placeholder="Masukkan Password"
             required
             style="padding-left: 38px; padding-right: 40px;"
           >
