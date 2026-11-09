@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Validasi format ID Karyawan tepat 8 digit huruf & angka
             if (!preg_match('/^[A-Za-z0-9]{8}$/', $nik)) {
-                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: ADM00002, TEK00006).");
+                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: C2506130).");
             }
 
             if (!in_array($role, ['admin_gudang', 'teknisi'])) {
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Validasi format ID Karyawan tepat 8 digit huruf & angka
             if (!preg_match('/^[A-Za-z0-9]{8}$/', $nik)) {
-                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: ADM00002, TEK00006).");
+                throw new Exception("ID Karyawan '{$nik}' tidak valid. Harus terdiri dari kombinasi huruf dan angka tepat 8 karakter (contoh: C2506130).");
             }
 
             // Cek apakah user ada

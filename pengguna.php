@@ -350,13 +350,13 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label"><i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan (8 Digit) *</label>
+            <label class="form-label"><i class="bi bi-person-badge text-primary me-1"></i> ID Karyawan (8 Karakter) *</label>
             <input 
               type="text" 
               name="nik" 
               id="userNikInput" 
               class="form-control font-mono" 
-              placeholder="Contoh: TEK00006" 
+              placeholder="Contoh: C2506130" 
               maxlength="8" 
               pattern="[A-Za-z0-9]{8}" 
               required
@@ -364,7 +364,7 @@ $totalActive = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'acti
               oninput="this.value = this.value.toUpperCase(); document.getElementById('userUsernameInput').value = this.value.toLowerCase();"
             >
             <input type="hidden" name="username" id="userUsernameInput" value="">
-            <small style="color: var(--text-dim); font-size: 0.72rem;">Kombinasi huruf & angka tepat 8 digit (misal: <code>ADM00002</code>, <code>TEK00006</code>).</small>
+            <small style="color: var(--text-dim); font-size: 0.72rem;">Kombinasi huruf & angka tepat 8 karakter (misal: <code>C2506130</code>).</small>
           </div>
 
           <div class="form-group">

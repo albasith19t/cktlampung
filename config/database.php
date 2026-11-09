@@ -454,7 +454,7 @@ function seedSampleOntSerials($pdo) {
 }
 
 // ---------------------------------------------------------
-// SEED 1 ADMIN & 5 TEKNISI DENGAN ID KARYAWAN 8 DIGIT & PASSWORD 123456
+// SEED 1 ADMIN & 5+ TEKNISI DENGAN ID KARYAWAN 8 KARAKTER & PASSWORD 123456
 // ---------------------------------------------------------
 function seedDefaultAccounts($pdo) {
     try {
@@ -471,12 +471,15 @@ function seedDefaultAccounts($pdo) {
     $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
 
     $defaultUsers = [
-        ['adm00001', $hashDefault, 'ADM00001', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang'],
-        ['tek00001', $hashDefault, 'TEK00001', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan'],
-        ['tek00002', $hashDefault, 'TEK00002', 'Rian Pratama', 'teknisi', 'Teknisi Lapangan'],
-        ['tek00003', $hashDefault, 'TEK00003', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan'],
-        ['tek00004', $hashDefault, 'TEK00004', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan'],
-        ['tek00005', $hashDefault, 'TEK00005', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan']
+        ['c2401018', $hashDefault, 'C2401018', 'Hendri Saputra', 'admin_gudang', 'Admin Gudang'],
+        ['c2506128', $hashDefault, 'C2506128', 'Budi Santoso', 'teknisi', 'Teknisi Lapangan'],
+        ['c2506130', $hashDefault, 'C2506130', 'Febrian Pratama', 'teknisi', 'Teknisi Lapangan'],
+        ['c2507204', $hashDefault, 'C2507204', 'Ahmad Zaki Fauzan', 'teknisi', 'Teknisi Lapangan'],
+        ['c2508311', $hashDefault, 'C2508311', 'Dimas Aditya', 'teknisi', 'Teknisi Lapangan'],
+        ['c2509142', $hashDefault, 'C2509142', 'Bayu Nugroho', 'teknisi', 'Teknisi Lapangan'],
+        ['c2509155', $hashDefault, 'C2509155', 'Juwadi', 'teknisi', 'Teknisi Lapangan'],
+        ['c2510201', $hashDefault, 'C2510201', 'Riski', 'teknisi', 'Teknisi Lapangan'],
+        ['c2510218', $hashDefault, 'C2510218', 'M Thoib', 'teknisi', 'Teknisi Lapangan']
     ];
 
     $stmtInsert = $pdo->prepare("INSERT INTO users (username, password, nik, name, role, department) VALUES (?, ?, ?, ?, ?, ?)");
@@ -488,41 +491,70 @@ function seedDefaultAccounts($pdo) {
 }
 
 /**
- * Otomatis migrasi ID Karyawan menjadi 8 Digit Alfanumerik (Huruf & Angka)
+ * Otomatis migrasi ID Karyawan menjadi 8 Karakter Alfanumerik (Huruf & Angka seperti C2506130)
  * dan pastikan seluruh user memiliki password default 123456
  */
 function migrateEmployeeIdsAndPasswords($pdo) {
     try {
-        $users = $pdo->query("SELECT id, username, nik, role, password FROM users ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
+
+        // Predefined mappings (ID Karyawan 8 Karakter Alfanumerik)
+        $mapping = [
+            1 => ['nik' => 'C2401018', 'name' => 'Hendri Saputra'],
+            2 => ['nik' => 'C2506128', 'name' => 'Budi Santoso'],
+            3 => ['nik' => 'C2506130', 'name' => 'Febrian Pratama'],
+            4 => ['nik' => 'C2507204', 'name' => 'Ahmad Zaki Fauzan'],
+            5 => ['nik' => 'C2508311', 'name' => 'Dimas Aditya'],
+            6 => ['nik' => 'C2509142', 'name' => 'Bayu Nugroho'],
+            7 => ['nik' => 'C2509155', 'name' => 'Juwadi'],
+            8 => ['nik' => 'C2510201', 'name' => 'Riski'],
+            9 => ['nik' => 'C2510218', 'name' => 'M Thoib']
+        ];
+
+        $users = $pdo->query("SELECT id, username, nik, name, role, password FROM users ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
         if (empty($users)) return;
 
         $needsMigration = false;
         foreach ($users as $u) {
-            if (strpos($u['nik'] ?? '', 'CKT-') !== false || strlen($u['nik'] ?? '') !== 8) {
+            $upperNik = strtoupper($u['nik'] ?? '');
+            if (strpos($upperNik, 'ADM') !== false || strpos($upperNik, 'TEK') !== false || strpos($upperNik, 'CKT') !== false) {
+                $needsMigration = true;
+                break;
+            }
+            if ((stripos($u['name'], 'febrian') !== false || stripos($u['name'], 'rian') !== false || (int)$u['id'] === 3) && $upperNik !== 'C2506130') {
                 $needsMigration = true;
                 break;
             }
         }
 
         if ($needsMigration) {
-            $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
-            $techCounter = 1;
-            $admCounter = 1;
-
+            $fallbackSeq = 200;
             foreach ($users as $u) {
                 $uid = (int)$u['id'];
-                $role = $u['role'] ?? 'teknisi';
-                $uname = strtolower($u['username'] ?? '');
-
-                if ($role === 'admin_gudang' || $role === 'admin' || $uname === 'admin') {
-                    $newNik = sprintf('ADM%05d', $admCounter++);
+                if (isset($mapping[$uid])) {
+                    $newNik = $mapping[$uid]['nik'];
+                    $newName = $mapping[$uid]['name'];
+                } elseif (stripos($u['name'], 'febrian') !== false || stripos($u['name'], 'rian') !== false) {
+                    $newNik = 'C2506130';
+                    $newName = 'Febrian Pratama';
                 } else {
-                    $newNik = sprintf('TEK%05d', $techCounter++);
+                    $fallbackSeq++;
+                    $newNik = 'C25' . sprintf('%05d', $fallbackSeq);
+                    $newName = $u['name'];
                 }
                 $newUname = strtolower($newNik);
 
-                $st = $pdo->prepare("UPDATE users SET nik = ?, username = ?, password = ? WHERE id = ?");
-                $st->execute([$newNik, $newUname, $hashDefault, $uid]);
+                $st = $pdo->prepare("UPDATE users SET nik = ?, username = ?, name = ?, password = ? WHERE id = ?");
+                $st->execute([$newNik, $newUname, $newName, $hashDefault, $uid]);
+            }
+        }
+
+        // Pastikan SEMUA user passwordnya selalu default 123456
+        $allUsers = $pdo->query("SELECT id, password FROM users")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($allUsers as $usr) {
+            if (!password_verify('123456', $usr['password'])) {
+                $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $up->execute([$hashDefault, $usr['id']]);
             }
         }
     } catch (Exception $e) {}

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = trim($_POST['password'] ?? '');
 
         if (empty($employeeId) || empty($password)) {
-            $error = "ID Karyawan (8 Digit) dan Password wajib diisi.";
+            $error = "ID Karyawan (8 Karakter) dan Password wajib diisi.";
         } else {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE UPPER(nik) = ? OR UPPER(username) = ? LIMIT 1");
             $stmt->execute([$employeeId, $employeeId]);
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             id="username" 
             name="username" 
             class="form-control" 
-            placeholder="Contoh: ADM00001 / TEK00001"
+            placeholder="Contoh: C2506130"
             maxlength="8"
             autocomplete="username"
             autocapitalize="characters"
@@ -211,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <i class="bi bi-person-badge" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
         </div>
         <small style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; display: block;">
-          Kombinasi huruf & angka 8 digit (misal: <code>ADM00001</code>, <code>TEK00001</code>).
+          Kombinasi 8 karakter huruf & angka (misal: <code>C2506130</code>).
         </small>
       </div>
 
@@ -241,28 +241,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </button>
     </form>
 
-    <!-- Info Akses Akun Default -->
-    <div style="margin-top: 22px; padding: 12px 14px; background: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.18); border-radius: var(--radius-md);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <span style="font-weight: 700; color: var(--text-main); font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
-          <i class="bi bi-key-fill text-primary"></i> Akses Akun Default
-        </span>
-        <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700; font-size: 0.7rem;">
-          Password: 123456
-        </span>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: var(--font-mono); font-size: 0.73rem;">
-        <button type="button" onclick="fillLogin('ADM00001')" class="btn-secondary" style="padding: 6px 8px; justify-content: space-between; background: #ffffff; text-align: left; font-size: 0.72rem;">
-          <span><strong>ADM00001</strong> (Admin)</span>
-          <i class="bi bi-arrow-up-right text-primary"></i>
-        </button>
-        <button type="button" onclick="fillLogin('TEK00001')" class="btn-secondary" style="padding: 6px 8px; justify-content: space-between; background: #ffffff; text-align: left; font-size: 0.72rem;">
-          <span><strong>TEK00001</strong> (Teknisi)</span>
-          <i class="bi bi-arrow-up-right text-success"></i>
-        </button>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -279,14 +257,6 @@ function togglePasswordVisibility() {
     icon.classList.remove('bi-eye-slash');
     icon.classList.add('bi-eye');
   }
-}
-
-function fillLogin(id) {
-  const userInput = document.getElementById('username');
-  const pwdInput = document.getElementById('password');
-  userInput.value = id;
-  pwdInput.value = '123456';
-  userInput.focus();
 }
 </script>
 
