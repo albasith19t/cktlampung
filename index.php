@@ -22,10 +22,23 @@ if (!$isAdmin) {
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
+// Pastikan stok ONT di tabel materials selalu sinkron dengan jumlah Serial Number 'available' di gudang
+syncSerializedMaterialStock($pdo);
+
 // 1. KPI Queries
 $totalMaterials = (int)$pdo->query("SELECT COUNT(*) FROM materials")->fetchColumn();
-$totalStockOntBesar = (int)$pdo->query("SELECT stock_current FROM materials WHERE code = 'MAT-ONT-BSR'")->fetchColumn();
-$totalStockOntKecil = (int)$pdo->query("SELECT stock_current FROM materials WHERE code = 'MAT-ONT-KCL'")->fetchColumn();
+$totalStockOntBesar = (int)$pdo->query("
+    SELECT COUNT(*) 
+    FROM material_serials ms 
+    JOIN materials m ON ms.material_id = m.id 
+    WHERE m.code = 'MAT-ONT-BSR' AND ms.status = 'available'
+")->fetchColumn();
+$totalStockOntKecil = (int)$pdo->query("
+    SELECT COUNT(*) 
+    FROM material_serials ms 
+    JOIN materials m ON ms.material_id = m.id 
+    WHERE m.code = 'MAT-ONT-KCL' AND ms.status = 'available'
+")->fetchColumn();
 
 $cableStats = $pdo->query("
     SELECT code, name, cable_length, stock_current, stock_min 

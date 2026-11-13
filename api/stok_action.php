@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                // Jika kuantiti belum diisi atau kurang, sesuaikan dengan jumlah SN yang diinput
-                if ($qty <= 0 || $qty < count($pairs)) {
-                    $qty = count($pairs);
-                }
+                // Sesuaikan kuantiti dengan jumlah pasti SN yang diinput
+                $qty = count($pairs);
+            } elseif ($mat['is_serialized'] == 1 && empty($newSerialsRaw)) {
+                throw new Exception("Untuk material ONT, wajib memasukkan daftar Serial Number (SN) unit yang diterima agar stok gudang tetap sinkron.");
             }
 
             if ($qty <= 0) {
@@ -159,6 +159,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmtSN->execute([$materialId, $sn, $mac]);
                     }
                 }
+            }
+
+            // Sinkronisasi stok ONT dengan jumlah SN available riil
+            syncSerializedMaterialStock($pdo);
+            if ($mat['is_serialized'] == 1) {
+                $stRecount = $pdo->prepare("SELECT stock_current FROM materials WHERE id = ?");
+                $stRecount->execute([$materialId]);
+                $stockAfter = (int)$stRecount->fetchColumn();
             }
 
             $pdo->commit();
@@ -227,12 +235,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($badAction === 'ganti_unit_selesai') {
                 $pdo->beginTransaction();
                 // Unit ganti baru / perbaikan selesai: kembalikan ke stok gudang
-                $stmtUp = $pdo->prepare("UPDATE material_serials SET status = 'in_stock', bon_id = NULL, customer_name = NULL, customer_id = NULL, customer_address = NULL, cable_used = NULL, installed_notes = 'Unit baru pengganti retur garansi', installed_at = NULL WHERE id = ?");
+                $stmtUp = $pdo->prepare("UPDATE material_serials SET status = 'available', bon_id = NULL, customer_name = NULL, customer_id = NULL, customer_address = NULL, cable_used = NULL, installed_notes = 'Unit baru pengganti retur garansi', installed_at = NULL WHERE id = ?");
                 $stmtUp->execute([$serialId]);
 
-                // Tambahkan stok material kembali
+                // Tambahkan stok material kembali & sinkronisasi dengan jumlah SN available
                 $stmtMat = $pdo->prepare("UPDATE materials SET stock_current = stock_current + 1 WHERE id = ?");
                 $stmtMat->execute([$snData['mat_id']]);
+                syncSerializedMaterialStock($pdo);
 
                 // Mutation log
                 $stmtMut = $pdo->prepare("

@@ -155,6 +155,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stockBefore = (int)$mat['stock_current'];
                     $stockAfter = $stockBefore - $qty;
 
+                    // Jika material adalah ONT (serialized) dan admin belum mengisi SN spesifik, ambil otomatis dari SN 'available' di gudang
+                    if ($mat['is_serialized'] == 1 && empty($snAssigned)) {
+                        $stAutoSn = $pdo->prepare("SELECT serial_number FROM material_serials WHERE material_id = ? AND status = 'available' ORDER BY id ASC LIMIT " . (int)$qty);
+                        $stAutoSn->execute([$matId]);
+                        $autoSns = $stAutoSn->fetchAll(PDO::FETCH_COLUMN);
+                        if (!empty($autoSns)) {
+                            $snAssigned = implode(', ', $autoSns);
+                        }
+                    }
+
                     // 1. Cek apakah barang sudah ada di bon_items yang sama
                     $stmtCheckItem->execute([$bonId, $matId]);
                     $existingItem = $stmtCheckItem->fetch();
@@ -214,6 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            syncSerializedMaterialStock($pdo);
             $pdo->commit();
 
             if ($isMerged) {

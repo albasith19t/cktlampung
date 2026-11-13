@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CKT Lampung - Sistem Gudang & Bon Material
  * Database Configuration (MySQL XAMPP + Automatic Fallback & Auth Guard)
@@ -33,14 +34,16 @@ if (session_status() === PHP_SESSION_NONE) {
 /**
  * CSRF Protection Helpers
  */
-function getCsrfToken() {
+function getCsrfToken()
+{
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
     return $_SESSION['csrf_token'];
 }
 
-function validateCsrfToken($token) {
+function validateCsrfToken($token)
+{
     if (empty($_SESSION['csrf_token']) || empty($token)) {
         return false;
     }
@@ -86,10 +89,9 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_TIMEOUT => 3
     ]);
-    
+
     $active_driver = 'mysql';
     initMySQLDatabase($pdo);
-
 } catch (Exception $e) {
     try {
         // B. Jika di XAMPP lokal dan database belum ada, buat otomatis
@@ -106,7 +108,6 @@ try {
         ]);
         $active_driver = 'mysql';
         initMySQLDatabase($pdo);
-
     } catch (Exception $e2) {
         // C. Fallback ke SQLite jika ekstensi PDO SQLite tersedia (misal di lokal)
         if (extension_loaded('pdo_sqlite')) {
@@ -136,63 +137,160 @@ try {
 /**
  * Tampilkan Halaman Panduan Konfigurasi Database jika koneksi belum sesuai
  */
-function renderDatabaseSetupError($errorMsg) {
-    ?>
+function renderDatabaseSetupError($errorMsg)
+{
+?>
     <!DOCTYPE html>
     <html lang="id">
+
     <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Konfigurasi Database - CKT Lampung</title>
-      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-      <style>
-        body { background: #0b1329; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .card { background: #131f37; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; max-width: 580px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .badge { display: inline-block; padding: 6px 12px; border-radius: 50px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.8rem; font-weight: 700; margin-bottom: 16px; border: 1px solid rgba(245, 158, 11, 0.3); }
-        h1 { font-size: 1.4rem; font-weight: 800; margin: 0 0 10px; color: #38bdf8; }
-        p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin: 0 0 20px; }
-        .info-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; margin-bottom: 20px; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .info-row:last-child { margin-bottom: 0; }
-        .info-label { color: #64748b; }
-        .info-val { color: #f1f5f9; font-weight: 700; }
-        .steps { font-size: 0.84rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px; padding-left: 20px; }
-        .steps li { margin-bottom: 8px; }
-        .btn { display: block; text-align: center; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
-      </style>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Konfigurasi Database - CKT Lampung</title>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+        <style>
+            body {
+                background: #0b1329;
+                color: #f8fafc;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+
+            .card {
+                background: #131f37;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                padding: 32px;
+                max-width: 580px;
+                width: 100%;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            }
+
+            .badge {
+                display: inline-block;
+                padding: 6px 12px;
+                border-radius: 50px;
+                background: rgba(245, 158, 11, 0.15);
+                color: #f59e0b;
+                font-size: 0.8rem;
+                font-weight: 700;
+                margin-bottom: 16px;
+                border: 1px solid rgba(245, 158, 11, 0.3);
+            }
+
+            h1 {
+                font-size: 1.4rem;
+                font-weight: 800;
+                margin: 0 0 10px;
+                color: #38bdf8;
+            }
+
+            p {
+                font-size: 0.9rem;
+                color: #94a3b8;
+                line-height: 1.6;
+                margin: 0 0 20px;
+            }
+
+            .info-box {
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 14px 16px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.82rem;
+                margin-bottom: 20px;
+            }
+
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            }
+
+            .info-row:last-child {
+                margin-bottom: 0;
+            }
+
+            .info-label {
+                color: #64748b;
+            }
+
+            .info-val {
+                color: #f1f5f9;
+                font-weight: 700;
+            }
+
+            .steps {
+                font-size: 0.84rem;
+                color: #cbd5e1;
+                line-height: 1.6;
+                margin-bottom: 24px;
+                padding-left: 20px;
+            }
+
+            .steps li {
+                margin-bottom: 8px;
+            }
+
+            .btn {
+                display: block;
+                text-align: center;
+                background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+                color: #fff;
+                text-decoration: none;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 700;
+                font-size: 0.88rem;
+                transition: opacity 0.2s;
+            }
+
+            .btn:hover {
+                opacity: 0.9;
+            }
+        </style>
     </head>
+
     <body>
-      <div class="card">
-        <div class="badge">⚙️ Perlu Pengaturan Database Hosting</div>
-        <h1>Hubungkan Database MySQL</h1>
-        <p>Aplikasi web CKT Lampung sudah terpasang di hosting, namun detail koneksi database MySQL di server belum disesuaikan.</p>
-        
-        <div class="info-box">
-          <div class="info-row"><span class="info-label">Host Saat Ini:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_host']) ?></span></div>
-          <div class="info-row"><span class="info-label">Database:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_name']) ?></span></div>
-          <div class="info-row"><span class="info-label">User:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_user']) ?></span></div>
+        <div class="card">
+            <div class="badge">⚙️ Perlu Pengaturan Database Hosting</div>
+            <h1>Hubungkan Database MySQL</h1>
+            <p>Aplikasi web CKT Lampung sudah terpasang di hosting, namun detail koneksi database MySQL di server belum disesuaikan.</p>
+
+            <div class="info-box">
+                <div class="info-row"><span class="info-label">Host Saat Ini:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_host']) ?></span></div>
+                <div class="info-row"><span class="info-label">Database:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_name']) ?></span></div>
+                <div class="info-row"><span class="info-label">User:</span><span class="info-val"><?= htmlspecialchars($GLOBALS['db_user']) ?></span></div>
+            </div>
+
+            <ol class="steps">
+                <li>Buka menu <strong>MySQL Databases</strong> di dashboard InfinityFree / cPanel Anda.</li>
+                <li>Buat database baru (misal: <code>cktlampung</code>).</li>
+                <li>Catat <strong>MySQL Hostname</strong>, <strong>DB Name</strong>, dan <strong>DB Username</strong> yang diberikan.</li>
+                <li>Buat file <code>.env</code> di File Manager atau sesuaikan file <code>config/database.php</code> dengan data tersebut.</li>
+            </ol>
+
+            <a href="login.php" class="btn" onclick="location.reload(); return false;">🔄 Refresh Halaman Setelah Setting</a>
         </div>
-
-        <ol class="steps">
-          <li>Buka menu <strong>MySQL Databases</strong> di dashboard InfinityFree / cPanel Anda.</li>
-          <li>Buat database baru (misal: <code>cktlampung</code>).</li>
-          <li>Catat <strong>MySQL Hostname</strong>, <strong>DB Name</strong>, dan <strong>DB Username</strong> yang diberikan.</li>
-          <li>Buat file <code>.env</code> di File Manager atau sesuaikan file <code>config/database.php</code> dengan data tersebut.</li>
-        </ol>
-
-        <a href="login.php" class="btn" onclick="location.reload(); return false;">🔄 Refresh Halaman Setelah Setting</a>
-      </div>
     </body>
+
     </html>
-    <?php
+<?php
     exit;
 }
 
 // ---------------------------------------------------------
 // AUTO-MIGRATE & SEEDER MYSQL
 // ---------------------------------------------------------
-function initMySQLDatabase($pdo) {
+function initMySQLDatabase($pdo)
+{
     $tableCheck = $pdo->query("SHOW TABLES LIKE 'users'")->fetch();
     if (!$tableCheck) {
         $sqlFile = __DIR__ . '/../cktlampung.sql';
@@ -205,7 +303,8 @@ function initMySQLDatabase($pdo) {
         try {
             $pdo->exec("ALTER TABLE `users` ADD COLUMN `username` VARCHAR(50) UNIQUE AFTER `id`");
             $pdo->exec("ALTER TABLE `users` ADD COLUMN `password` VARCHAR(255) AFTER `username`");
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
 
         // Ensure material_serials installation columns exist
         $serCols = [
@@ -220,16 +319,19 @@ function initMySQLDatabase($pdo) {
         foreach ($serCols as $sql) {
             try {
                 $pdo->exec($sql);
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         seedDefaultAccounts($pdo);
         migrateEmployeeIdsAndPasswords($pdo);
         consolidateActiveBonsForTechs($pdo);
+        syncSerializedMaterialStock($pdo);
     }
 }
 
-function consolidateActiveBonsForTechs($pdo) {
+function consolidateActiveBonsForTechs($pdo)
+{
     try {
         $techs = $pdo->query("
             SELECT user_id, COUNT(*) as active_count 
@@ -269,7 +371,7 @@ function consolidateActiveBonsForTechs($pdo) {
                     if ($masterItem) {
                         $newQtyReq = (int)$masterItem['quantity_requested'] + (int)$oi['quantity_requested'];
                         $newQtyApp = (int)$masterItem['quantity_approved'] + $qty;
-                        
+
                         $combinedSns = trim($masterItem['serial_numbers'] ?? '');
                         if (!empty($sns)) {
                             $combinedSns = !empty($combinedSns) ? ($combinedSns . ', ' . $sns) : $sns;
@@ -296,13 +398,15 @@ function consolidateActiveBonsForTechs($pdo) {
                 $pdo->exec("DELETE FROM bon_requests WHERE id = {$otherBonId}");
             }
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+    }
 }
 
 // ---------------------------------------------------------
 // AUTO-MIGRATE & SEEDER SQLITE (Fallback)
 // ---------------------------------------------------------
-function initSQLiteDatabase($pdo) {
+function initSQLiteDatabase($pdo)
+{
     $tableCheck = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")->fetch();
     if (!$tableCheck) {
         $pdo->exec("
@@ -405,15 +509,15 @@ function initSQLiteDatabase($pdo) {
             (2, 'Kabel Drop Core FO', 'CAT-KBL', 'Kabel Fiber Optic Drop Cable');
 
             INSERT OR IGNORE INTO materials (id, category_id, code, name, brand, model_type, cable_length, unit, stock_current, stock_min, is_serialized) VALUES
-            (1, 1, 'MAT-ONT-BSR', 'ONT Besar (Dual Band Gigabit Wi-Fi)', 'ZTE / Huawei Dual Band', 'Dual Band 2.4/5GHz 4GE', NULL, 'Unit', 52, 15, 1),
-            (2, 1, 'MAT-ONT-KCL', 'ONT Kecil (Single Band / Mini Wi-Fi)', 'Fiberhome / ZTE Single Band', 'Single Band 2.4GHz 1GE+3FE', NULL, 'Unit', 35, 10, 1),
+            (1, 1, 'MAT-ONT-BSR', 'ONT Besar (Dual Band Gigabit Wi-Fi)', 'ZTE / Huawei Dual Band', 'Dual Band 2.4/5GHz 4GE', NULL, 'Unit', 4, 2, 1),
+            (2, 1, 'MAT-ONT-KCL', 'ONT Kecil (Single Band / Mini Wi-Fi)', 'Fiberhome / ZTE Single Band', 'Single Band 2.4GHz 1GE+3FE', NULL, 'Unit', 3, 2, 1),
             (4, 2, 'MAT-KBL-150', 'Kabel Drop Core 1 Core 3 Steel Wire (150 Meter)', 'V-Sol / Netlink', 'Pre-Connectorized SC/UPC', 150, 'Roll', 64, 20, 0),
             (5, 2, 'MAT-KBL-100', 'Kabel Drop Core 1 Core 3 Steel Wire (100 Meter)', 'V-Sol / Netlink', 'Pre-Connectorized SC/UPC', 100, 'Roll', 92, 25, 0),
             (6, 2, 'MAT-KBL-075', 'Kabel Drop Core 1 Core 3 Steel Wire (75 Meter)', 'V-Sol / Netlink', 'Pre-Connectorized SC/UPC', 75, 'Roll', 109, 30, 0),
             (7, 2, 'MAT-KBL-050', 'Kabel Drop Core 1 Core 3 Steel Wire (50 Meter)', 'V-Sol / Netlink', 'Pre-Connectorized SC/UPC', 50, 'Roll', 140, 35, 0);
         ");
     }
-    
+
     // Auto-migrate material_serials columns for SQLite
     try {
         $cols = $pdo->query("PRAGMA table_info(material_serials)")->fetchAll(PDO::FETCH_COLUMN, 1);
@@ -423,14 +527,46 @@ function initSQLiteDatabase($pdo) {
         if (!in_array('cable_used', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN cable_used VARCHAR(150)");
         if (!in_array('installed_notes', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN installed_notes TEXT");
         if (!in_array('installed_at', $cols)) $pdo->exec("ALTER TABLE material_serials ADD COLUMN installed_at DATETIME");
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+    }
 
     seedDefaultAccounts($pdo);
     migrateEmployeeIdsAndPasswords($pdo);
     seedSampleOntSerials($pdo);
+    syncSerializedMaterialStock($pdo);
 }
 
-function seedSampleOntSerials($pdo) {
+/**
+ * Sinkronisasi otomatis stok ONT (materials.stock_current) dengan jumlah Serial Number
+ * riil yang berstatus 'available' (Stok Gudang) di tabel material_serials.
+ */
+function syncSerializedMaterialStock($pdo)
+{
+    try {
+        // Normalisasi status in_stock ke available
+        $pdo->exec("UPDATE material_serials SET status = 'available' WHERE status = 'in_stock'");
+
+        // Ambil semua material yang menggunakan Serial Number (ONT)
+        $serializedMats = $pdo->query("SELECT id, stock_current, stock_min FROM materials WHERE is_serialized = 1")->fetchAll(PDO::FETCH_ASSOC);
+        $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM material_serials WHERE material_id = ? AND status = 'available'");
+        $stmtUpdate = $pdo->prepare("UPDATE materials SET stock_current = ?, stock_min = ? WHERE id = ?");
+
+        foreach ($serializedMats as $m) {
+            $matId = (int)$m['id'];
+            $stmtCount->execute([$matId]);
+            $realAvailableCount = (int)$stmtCount->fetchColumn();
+            $newStockMin = ((int)$m['stock_min'] >= 10) ? 2 : (int)$m['stock_min'];
+
+            if ((int)$m['stock_current'] !== $realAvailableCount || (int)$m['stock_min'] !== $newStockMin) {
+                $stmtUpdate->execute([$realAvailableCount, $newStockMin, $matId]);
+            }
+        }
+    } catch (Exception $e) {
+    }
+}
+
+function seedSampleOntSerials($pdo)
+{
     try {
         $count = (int)$pdo->query("SELECT COUNT(*) FROM material_serials")->fetchColumn();
         if ($count < 6) {
@@ -447,16 +583,21 @@ function seedSampleOntSerials($pdo) {
             ];
             $stmt = $pdo->prepare("INSERT OR IGNORE INTO material_serials (material_id, serial_number, mac_address, status, bon_id, received_date) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
             foreach ($sampleSerials as $s) {
-                try { $stmt->execute($s); } catch (Exception $e) {}
+                try {
+                    $stmt->execute($s);
+                } catch (Exception $e) {
+                }
             }
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+    }
 }
 
 // ---------------------------------------------------------
 // SEED 1 ADMIN & 5+ TEKNISI DENGAN ID KARYAWAN 8 KARAKTER & PASSWORD 123456
 // ---------------------------------------------------------
-function seedDefaultAccounts($pdo) {
+function seedDefaultAccounts($pdo)
+{
     try {
         // Jika data pengguna sudah ada, jangan overwrite
         $count = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
@@ -486,7 +627,8 @@ function seedDefaultAccounts($pdo) {
     foreach ($defaultUsers as $u) {
         try {
             $stmtInsert->execute($u);
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 }
 
@@ -494,7 +636,8 @@ function seedDefaultAccounts($pdo) {
  * Otomatis migrasi ID Karyawan menjadi 8 Karakter Alfanumerik (Huruf & Angka seperti C2506130)
  * dan pastikan seluruh user memiliki password default 123456
  */
-function migrateEmployeeIdsAndPasswords($pdo) {
+function migrateEmployeeIdsAndPasswords($pdo)
+{
     try {
         $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
 
@@ -557,7 +700,8 @@ function migrateEmployeeIdsAndPasswords($pdo) {
                 $up->execute([$hashDefault, $usr['id']]);
             }
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+    }
 }
 
 // ---------------------------------------------------------
@@ -575,7 +719,8 @@ if (!$isPublicPage) {
     }
 }
 
-function getCurrentUser($pdo) {
+function getCurrentUser($pdo)
+{
     $userId = $_SESSION['user_id'] ?? $_SESSION['current_user_id'] ?? 1;
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$userId]);
@@ -586,24 +731,38 @@ function getCurrentUser($pdo) {
     return $user;
 }
 
-function getAllUsers($pdo) {
+function getAllUsers($pdo)
+{
     return $pdo->query("SELECT * FROM users ORDER BY role ASC, name ASC")->fetchAll();
 }
 
-function getPendingBonCount($pdo) {
+function getPendingBonCount($pdo)
+{
     return (int) $pdo->query("SELECT COUNT(*) FROM bon_requests WHERE status = 'pending'")->fetchColumn();
 }
 
-function getStockAlertCount($pdo) {
+function getStockAlertCount($pdo)
+{
     return (int) $pdo->query("SELECT COUNT(*) FROM materials WHERE stock_current <= stock_min")->fetchColumn();
 }
 
-function formatTanggalIndo($datetime) {
+function formatTanggalIndo($datetime)
+{
     if (!$datetime) return '-';
     $time = strtotime($datetime);
     $bulan = [
-        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        1 => 'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
     ];
     $tgl = date('d', $time);
     $bln = $bulan[(int)date('m', $time)];
@@ -612,7 +771,8 @@ function formatTanggalIndo($datetime) {
     return "$tgl $bln $thn, $jam WIB";
 }
 
-function formatTanggalSingkat($datetime) {
+function formatTanggalSingkat($datetime)
+{
     if (!$datetime) return '-';
     return date('d/m/Y H:i', strtotime($datetime));
 }
@@ -623,7 +783,8 @@ function formatTanggalSingkat($datetime) {
  * status Surat Bon otomatis 'approved' (Proses).
  * Jika 100% material telah selesai terpasang / digunakan, status otomatis 'completed' (Selesai).
  */
-function syncBonCompletionStatus($pdo, $bonId) {
+function syncBonCompletionStatus($pdo, $bonId)
+{
     $bonId = (int)$bonId;
     if ($bonId <= 0) return;
 

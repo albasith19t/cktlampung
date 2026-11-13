@@ -132,10 +132,15 @@ $stmtOnt = $pdo->prepare($ontSql);
 $stmtOnt->execute($ontParams);
 $ontList = $stmtOnt->fetchAll();
 
+// Pastikan stok ONT di tabel materials selalu sinkron dengan jumlah Serial Number 'available' di gudang
+syncSerializedMaterialStock($pdo);
+
 // KPI Stats ONT
 $totalOntAll = (int)$pdo->query("SELECT COUNT(*) FROM material_serials")->fetchColumn();
 $totalOntGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'available'")->fetchColumn();
-$totalOntTeknisi = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'allocated'")->fetchColumn();
+$ontBesarGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE m.code = 'MAT-ONT-BSR' AND ms.status = 'available'")->fetchColumn();
+$ontKecilGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE m.code = 'MAT-ONT-KCL' AND ms.status = 'available'")->fetchColumn();
+$totalOntTeknisi = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'allocated' OR (bon_id IS NOT NULL AND status != 'installed' AND status != 'bad')")->fetchColumn();
 $totalOntInstalled = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'installed'")->fetchColumn();
 
 // ONT Materials for Dropdown
@@ -206,7 +211,7 @@ if ($activeTab === 'mutasi') {
     <!-- Navigation Tabs -->
     <div style="display: flex; gap: 12px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; overflow-x: auto;">
       <a href="stok.php?tab=ont" style="padding: 12px 20px; font-weight: 700; font-size: 0.92rem; border-bottom: 3px solid <?= ($activeTab === 'ont') ? 'var(--primary)' : 'transparent' ?>; color: <?= ($activeTab === 'ont') ? 'var(--primary)' : 'var(--text-muted)' ?>; text-decoration: none; margin-bottom: -2px; display: inline-flex; align-items: center; gap: 8px;">
-        <i class="bi bi-router"></i> Stok ONT & Serial Number (<?= $totalOntAll ?> Unit)
+        <i class="bi bi-router"></i> Stok ONT & Serial Number (<?= $totalOntGudang ?> Stok Gudang)
       </a>
       <a href="stok.php?tab=kabel" style="padding: 12px 20px; font-weight: 700; font-size: 0.92rem; border-bottom: 3px solid <?= ($activeTab === 'kabel') ? 'var(--primary)' : 'transparent' ?>; color: <?= ($activeTab === 'kabel') ? 'var(--primary)' : 'var(--text-muted)' ?>; text-decoration: none; margin-bottom: -2px; display: inline-flex; align-items: center; gap: 8px;">
         <i class="bi bi-bezier2"></i> Stok Kabel Drop Core (<?= $totalCablesRoll ?> Roll)
@@ -220,6 +225,33 @@ if ($activeTab === 'mutasi') {
          TAB 1: STOK ONT & SERIAL NUMBER
          ========================================================= -->
     <?php if ($activeTab === 'ont'): ?>
+
+      <!-- Ringkasan Stok ONT Real-Time (Sinkron dengan Dashboard) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <a href="stok.php?tab=ont&status=gudang" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === 'gudang') ? '#10b981' : 'var(--border-color)' ?>; border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📦 Stok Gudang Tersedia</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: #10b981; font-family: var(--font-mono);"><?= $totalOntGudang ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-dim);">ONT Besar: <strong><?= $ontBesarGudang ?></strong> &bull; ONT Kecil: <strong><?= $ontKecilGudang ?></strong></div>
+        </a>
+
+        <a href="stok.php?tab=ont&status=teknisi" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === 'teknisi') ? '#f59e0b' : 'var(--border-color)' ?>; border-left: 4px solid #f59e0b; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🚚 Dibawa Teknisi</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: #d97706; font-family: var(--font-mono);"><?= $totalOntTeknisi ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-dim);">Sedang dibawa di lapangan</div>
+        </a>
+
+        <a href="stok.php?tab=ont&status=installed" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === 'installed') ? 'var(--primary)' : 'var(--border-color)' ?>; border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🏠 Selesai Terpasang</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--primary); font-family: var(--font-mono);"><?= $totalOntInstalled ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-dim);">Sudah terpasang di pelanggan</div>
+        </a>
+
+        <a href="stok.php?tab=ont" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === '') ? '#64748b' : 'var(--border-color)' ?>; border-left: 4px solid #64748b; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📋 Total SN Tercatat</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mono);"><?= $totalOntAll ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-dim);">Seluruh riwayat unit ONT</div>
+        </a>
+      </div>
 
 
       <!-- Filter & Search Toolbar -->
