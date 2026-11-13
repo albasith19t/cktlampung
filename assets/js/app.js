@@ -78,7 +78,7 @@ function renderSearchResults(data, container) {
   if (data.materials?.length) {
     html += `<div class="search-result-group-title"><i class="bi bi-boxes me-1"></i> Material & Kabel</div>`;
     data.materials.forEach(m => {
-      const stockBadge = m.stock_current <= m.stock_min 
+      const stockBadge = m.stock_current <= m.stock_min
         ? `<span class="badge" style="background: var(--danger-bg); color: var(--danger); font-size: 0.7rem;">Sisa: ${m.stock_current} ${m.unit} (Kritis)</span>`
         : `<span class="badge" style="background: var(--success-bg); color: var(--success); font-size: 0.7rem;">Sisa: ${m.stock_current} ${m.unit}</span>`;
 
@@ -120,13 +120,21 @@ function renderSearchResults(data, container) {
   if (data.serials?.length) {
     html += `<div class="search-result-group-title"><i class="bi bi-upc-scan me-1"></i> Serial Number ONT</div>`;
     data.serials.forEach(s => {
+      const targetUrl = (s.status === 'installed')
+        ? `riwayat.php?search=${encodeURIComponent(s.serial_number)}`
+        : `stok.php?sn=${encodeURIComponent(s.serial_number)}`;
+      const statusLabel = (s.status === 'available') ? 'Stok Gudang'
+        : (s.status === 'allocated') ? 'Di Teknisi'
+        : (s.status === 'installed') ? 'Selesai Terpasang'
+        : s.status;
+
       html += `
-        <a href="stok.php?sn=${encodeURIComponent(s.serial_number)}" class="search-result-item">
+        <a href="${targetUrl}" class="search-result-item">
           <div class="search-item-left">
             <i class="bi bi-router" style="color: var(--ont-color); font-size: 1.1rem;"></i>
             <div>
               <div class="search-item-title font-mono" style="color: #38bdf8;">SN: ${escapeHtml(s.serial_number)}</div>
-              <div class="search-item-sub">${escapeHtml(s.material_name)} &bull; Status: ${escapeHtml(s.status)}</div>
+              <div class="search-item-sub">${escapeHtml(s.material_name)} &bull; Status: ${escapeHtml(statusLabel)}</div>
             </div>
           </div>
         </a>
@@ -189,7 +197,7 @@ function initModals() {
       if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
         if (activeEl.closest('.modal-backdrop') || activeEl.classList.contains('bon-serial-input')) {
           e.preventDefault(); // Stop form submission
-          
+
           // If scanned in bon serial input, give visual green check feedback
           if (activeEl.classList.contains('bon-serial-input')) {
             activeEl.style.borderColor = '#10b981';

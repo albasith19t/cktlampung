@@ -639,8 +639,6 @@ function seedDefaultAccounts($pdo)
 function migrateEmployeeIdsAndPasswords($pdo)
 {
     try {
-        $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
-
         // Predefined mappings (ID Karyawan 8 Karakter Alfanumerik)
         $mapping = [
             1 => ['nik' => 'C2401018', 'name' => 'Hendri Saputra'],
@@ -671,6 +669,7 @@ function migrateEmployeeIdsAndPasswords($pdo)
         }
 
         if ($needsMigration) {
+            $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
             $fallbackSeq = 200;
             foreach ($users as $u) {
                 $uid = (int)$u['id'];
@@ -690,14 +689,17 @@ function migrateEmployeeIdsAndPasswords($pdo)
                 $st = $pdo->prepare("UPDATE users SET nik = ?, username = ?, name = ?, password = ? WHERE id = ?");
                 $st->execute([$newNik, $newUname, $newName, $hashDefault, $uid]);
             }
-        }
-
-        // Pastikan SEMUA user passwordnya selalu default 123456
-        $allUsers = $pdo->query("SELECT id, password FROM users")->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($allUsers as $usr) {
-            if (!password_verify('123456', $usr['password'])) {
-                $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-                $up->execute([$hashDefault, $usr['id']]);
+        } else {
+            // Pastikan user yang belum punya hash password valid di-set ke default 123456
+            $hashDefault = null;
+            foreach ($users as $usr) {
+                if (empty($usr['password']) || strpos($usr['password'], '$2y$') !== 0) {
+                    if ($hashDefault === null) {
+                        $hashDefault = password_hash('123456', PASSWORD_BCRYPT);
+                    }
+                    $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $up->execute([$hashDefault, $usr['id']]);
+                }
             }
         }
     } catch (Exception $e) {

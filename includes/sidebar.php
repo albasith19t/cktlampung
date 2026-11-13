@@ -83,13 +83,13 @@ $isTeknisi = (($currentUser['role'] ?? '') === 'teknisi');
         <div class="sidebar-group-title">Kategori Material</div>
         <ul class="sidebar-menu">
           <li>
-            <a href="stok.php?cat=CAT-ONT" class="sidebar-nav-item" style="font-size: 0.82rem;">
+            <a href="stok.php?tab=ont" class="sidebar-nav-item" style="font-size: 0.82rem;">
               <i class="bi bi-router" style="color: #a78bfa;"></i>
               <span>ONT & Modem Wi-Fi</span>
             </a>
           </li>
           <li>
-            <a href="stok.php?cat=CAT-KBL" class="sidebar-nav-item" style="font-size: 0.82rem;">
+            <a href="stok.php?tab=kabel" class="sidebar-nav-item" style="font-size: 0.82rem;">
               <i class="bi bi-bezier2" style="color: #38bdf8;"></i>
               <span>Kabel Drop Core FO</span>
             </a>

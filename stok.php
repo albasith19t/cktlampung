@@ -28,7 +28,14 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
 // Active Tab: 'ont' (default), 'kabel', 'mutasi'
-$activeTab = $_GET['tab'] ?? 'ont';
+$activeTab = $_GET['tab'] ?? '';
+if (empty($activeTab)) {
+    if (($_GET['cat'] ?? '') === 'CAT-KBL' || (int)($_GET['highlight'] ?? 0) >= 4) {
+        $activeTab = 'kabel';
+    } else {
+        $activeTab = 'ont';
+    }
+}
 if ($activeTab === 'materials') $activeTab = 'ont';
 if ($activeTab === 'serials') $activeTab = 'ont';
 
