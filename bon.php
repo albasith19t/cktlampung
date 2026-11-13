@@ -622,22 +622,45 @@ if ($detailId > 0) {
                                     <i class="bi bi-hourglass-split"></i> Belum Dilaporkan (Di Tas)
                                   </div>
                                 </div>
-                                <button 
-                                  type="button" 
-                                  class="btn-primary" 
-                                  style="padding: 6px 14px; font-size: 0.78rem; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; font-weight: 700; border-radius: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); cursor: pointer;"
-                                  onclick="openInstallSNModal(<?= $selectedBon['id'] ?>, '<?= htmlspecialchars($selectedBon['bon_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>', <?= (int)$item['material_id'] ?>)"
-                                >
-                                  <i class="bi bi-pencil-square me-1"></i> Lapor Status ONT
-                                </button>
-                              </div>
+                                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button 
+                                      type="button" 
+                                      class="btn-primary" 
+                                      style="padding: 6px 14px; font-size: 0.78rem; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; font-weight: 700; border-radius: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); cursor: pointer;"
+                                      onclick="openInstallSNModal(<?= $selectedBon['id'] ?>, '<?= htmlspecialchars($selectedBon['bon_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>', <?= (int)$item['material_id'] ?>)"
+                                    >
+                                      <i class="bi bi-pencil-square me-1"></i> Lapor Status ONT
+                                    </button>
+                                    <?php if ($isAdmin): ?>
+                                      <button 
+                                        type="button" 
+                                        class="btn-secondary" 
+                                        style="padding: 6px 12px; font-size: 0.76rem; border-color: rgba(16, 185, 129, 0.4); color: #059669; font-weight: 700; border-radius: 4px; cursor: pointer;"
+                                        onclick="confirmReturnSn(<?= $selectedBon['id'] ?>, <?= (int)$item['material_id'] ?>, '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>')"
+                                        title="Kembalikan unit ONT ini ke Stok Gudang"
+                                      >
+                                        <i class="bi bi-box-arrow-in-left me-1"></i> Kembalikan ke Gudang
+                                      </button>
+                                    <?php endif; ?>
+                                  </div>
+                                </div>
+                              <?php endif; ?>
+                            <?php endforeach; ?>
+                          </div>
+                        <?php elseif ($item['cable_length']): ?>
+                          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
+                            <span><i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel Tersedia di Tas: <strong><?= (int)($item['remaining_qty'] ?? $qty) ?> Roll</strong></span>
+                            <?php if ($isAdmin && (int)($item['remaining_qty'] ?? $qty) > 0): ?>
+                              <button 
+                                type="button" 
+                                class="btn-secondary" 
+                                style="padding: 4px 10px; font-size: 0.74rem; border-color: rgba(16, 185, 129, 0.45); color: #047857; font-weight: 700; background: #fff; cursor: pointer;"
+                                onclick="confirmReturnCable(<?= $selectedBon['id'] ?>, <?= (int)$item['material_id'] ?>, '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>', <?= (int)($item['remaining_qty'] ?? $qty) ?>)"
+                              >
+                                <i class="bi bi-box-arrow-in-left me-1"></i> Retur Sisa ke Gudang
+                              </button>
                             <?php endif; ?>
-                          <?php endforeach; ?>
-                        </div>
-                      <?php elseif ($item['cable_length']): ?>
-                        <div style="font-size: 0.8rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
-                          <i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel Tersedia di Tas (Siap Dipasang)
-                        </div>
+                          </div>
                       <?php elseif ($item['serial_numbers']): ?>
                         <span class="badge font-mono" style="background: rgba(2, 132, 199, 0.1); color: var(--primary); border: 1px solid rgba(2, 132, 199, 0.25); padding: 4px 8px;">
                           SN: <?= htmlspecialchars($item['serial_numbers']) ?>
@@ -726,13 +749,33 @@ if ($detailId > 0) {
                           >
                             <i class="bi bi-pencil-square" style="font-size: 1.1rem;"></i> Lapor Status ONT (Pasang / Bad / Change)
                           </button>
+                          <?php if ($isAdmin): ?>
+                            <button 
+                              type="button" 
+                              class="btn-secondary" 
+                              style="width: 100%; margin-top: 8px; padding: 8px 12px; font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4); color: #059669; font-weight: 700; border-radius: 8px; cursor: pointer;"
+                              onclick="confirmReturnSn(<?= $selectedBon['id'] ?>, <?= (int)$item['material_id'] ?>, '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>')"
+                            >
+                              <i class="bi bi-box-arrow-in-left me-1"></i> Kembalikan Unit ke Gudang
+                            </button>
+                          <?php endif; ?>
                         </div>
                       <?php endif; ?>
                     <?php endforeach; ?>
                   </div>
                 <?php elseif ($item['cable_length']): ?>
-                  <div style="font-size: 0.78rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
-                    <i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel di Tas (Siap Dipasang)
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.78rem; color: #047857; background: rgba(16, 185, 129, 0.08); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 600;">
+                    <span><i class="bi bi-bezier2 me-1 text-primary"></i> Sisa Roll Kabel di Tas: <strong><?= (int)($item['remaining_qty'] ?? $qty) ?> Roll</strong></span>
+                    <?php if ($isAdmin && (int)($item['remaining_qty'] ?? $qty) > 0): ?>
+                      <button 
+                        type="button" 
+                        class="btn-secondary" 
+                        style="padding: 4px 10px; font-size: 0.74rem; border-color: rgba(16, 185, 129, 0.45); color: #047857; font-weight: 700; background: #fff; cursor: pointer;"
+                        onclick="confirmReturnCable(<?= $selectedBon['id'] ?>, <?= (int)$item['material_id'] ?>, '<?= htmlspecialchars($item['mat_name'], ENT_QUOTES) ?>', <?= (int)($item['remaining_qty'] ?? $qty) ?>)"
+                      >
+                        <i class="bi bi-box-arrow-in-left me-1"></i> Retur Sisa
+                      </button>
+                    <?php endif; ?>
                   </div>
                 <?php else: ?>
                   <div style="font-size: 0.76rem; color: var(--text-dim);">
@@ -903,7 +946,69 @@ if ($detailId > 0) {
   </main>
 </div>
 
+<!-- Hidden Forms for Returning Unused Material to Gudang -->
+<form method="POST" action="api/bon_action.php" id="formReturnSn" style="display: none;">
+  <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+  <input type="hidden" name="action" value="return_sn">
+  <input type="hidden" name="bon_id" id="returnSnBonId">
+  <input type="hidden" name="material_id" id="returnSnMaterialId">
+  <input type="hidden" name="serial_number" id="returnSnValue">
+</form>
+
+<form method="POST" action="api/bon_action.php" id="formReturnCable" style="display: none;">
+  <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+  <input type="hidden" name="action" value="return_cable">
+  <input type="hidden" name="bon_id" id="returnCableBonId">
+  <input type="hidden" name="material_id" id="returnCableMaterialId">
+  <input type="hidden" name="return_qty" id="returnCableQty" value="1">
+</form>
+
 <script>
+function confirmReturnSn(bonId, materialId, sn, matName) {
+  Swal.fire({
+    icon: 'question',
+    title: 'Kembalikan ONT ke Gudang?',
+    html: `Unit <strong>${matName}</strong> dengan SN <code style="font-weight:800;color:#0284c7;">${sn}</code> akan dikembalikan dari tas teknisi ke <strong>Stok Gudang</strong>.`,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-in-left me-1"></i> Ya, Kembalikan ke Gudang',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#10b981'
+  }).then((res) => {
+    if (res.isConfirmed) {
+      document.getElementById('returnSnBonId').value = bonId;
+      document.getElementById('returnSnMaterialId').value = materialId;
+      document.getElementById('returnSnValue').value = sn;
+      document.getElementById('formReturnSn').submit();
+    }
+  });
+}
+
+function confirmReturnCable(bonId, materialId, matName, maxRemaining) {
+  Swal.fire({
+    icon: 'question',
+    title: 'Retur Sisa Kabel ke Gudang',
+    html: `Masukkan jumlah Roll <strong>${matName}</strong> yang dikembalikan teknisi ke gudang (Maks: <strong>${maxRemaining} Roll</strong>):`,
+    input: 'number',
+    inputValue: 1,
+    inputAttributes: {
+      min: 1,
+      max: maxRemaining,
+      step: 1
+    },
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-in-left me-1"></i> Kembalikan ke Gudang',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#10b981'
+  }).then((res) => {
+    if (res.isConfirmed && res.value > 0) {
+      document.getElementById('returnCableBonId').value = bonId;
+      document.getElementById('returnCableMaterialId').value = materialId;
+      document.getElementById('returnCableQty').value = Math.min(maxRemaining, parseInt(res.value, 10) || 1);
+      document.getElementById('formReturnCable').submit();
+    }
+  });
+}
+
 function switchMaterialCategory(cat) {
   // Update button active styles
   document.querySelectorAll('.btn-mat-tab').forEach(b => {

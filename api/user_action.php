@@ -9,6 +9,75 @@ require_once __DIR__ . '/../config/database.php';
 $currentUser = getCurrentUser($pdo);
 $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
 
+// ---------------------------------------------------------
+// FITUR KHUSUS SEMUA USER (TEKNISI & ADMIN): GANTI PASSWORD SENDIRI
+// ---------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'change_own_password') {
+    $fallbackRedirect = $isAdmin ? '../index.php' : '../bon.php';
+    $referer = $_SERVER['HTTP_REFERER'] ?? $fallbackRedirect;
+
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $_SESSION['flash_message'] = [
+            'type' => 'error',
+            'title' => 'Permintaan Tidak Valid (CSRF)',
+            'text' => 'Token sesi formulir telah kedaluwarsa. Silakan refresh halaman dan coba kembali.'
+        ];
+        header("Location: " . $referer);
+        exit;
+    }
+
+    try {
+        if (empty($currentUser['id'])) {
+            throw new Exception("Sesi login tidak ditemukan. Silakan login kembali.");
+        }
+
+        $oldPassword = trim($_POST['old_password'] ?? '');
+        $newPassword = trim($_POST['new_password'] ?? '');
+        $confirmPassword = trim($_POST['confirm_password'] ?? '');
+
+        if (empty($oldPassword) || empty($newPassword) || empty($confirmPassword)) {
+            throw new Exception("Semua kolom password wajib diisi.");
+        }
+
+        if (strlen($newPassword) < 4) {
+            throw new Exception("Password baru minimal harus terdiri dari 4 karakter.");
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            throw new Exception("Konfirmasi password baru tidak cocok.");
+        }
+
+        // Verifikasi password lama
+        $stmtU = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+        $stmtU->execute([$currentUser['id']]);
+        $dbHash = $stmtU->fetchColumn();
+
+        if (!password_verify($oldPassword, $dbHash)) {
+            throw new Exception("Password lama yang Anda masukkan salah.");
+        }
+
+        $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $stmtUp = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmtUp->execute([$newHash, $currentUser['id']]);
+
+        $_SESSION['flash_message'] = [
+            'type' => 'success',
+            'title' => 'Password Berhasil Diubah!',
+            'text' => 'Password akun Anda telah berhasil diperbarui. Gunakan password baru untuk login berikutnya.'
+        ];
+        header("Location: " . $referer);
+        exit;
+    } catch (Exception $e) {
+        $_SESSION['flash_message'] = [
+            'type' => 'error',
+            'title' => 'Gagal Mengubah Password',
+            'text' => $e->getMessage()
+        ];
+        header("Location: " . $referer);
+        exit;
+    }
+}
+
 if (!$isAdmin) {
     $_SESSION['flash_message'] = [
         'type' => 'error',

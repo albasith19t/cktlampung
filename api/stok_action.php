@@ -273,6 +273,139 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
+
+    // ---------------------------------------------------------
+    // 3. EDIT SERIAL NUMBER, MAC ADDRESS & TIPE ONT (Koreksi Input)
+    // ---------------------------------------------------------
+    if ($action === 'edit_sn') {
+        try {
+            $serialId = (int)($_POST['serial_id'] ?? 0);
+            $materialId = (int)($_POST['material_id'] ?? 0);
+            $newSn = strtoupper(trim($_POST['serial_number'] ?? ''));
+            $newMac = strtoupper(trim($_POST['mac_address'] ?? ''));
+            if ($newMac === '') $newMac = null;
+
+            if ($serialId <= 0 || $materialId <= 0 || empty($newSn)) {
+                throw new Exception("Serial Number dan Tipe ONT wajib diisi.");
+            }
+
+            $stOld = $pdo->prepare("SELECT * FROM material_serials WHERE id = ?");
+            $stOld->execute([$serialId]);
+            $oldRow = $stOld->fetch();
+            if (!$oldRow) {
+                throw new Exception("Data Serial Number tidak ditemukan.");
+            }
+
+            // Cek duplikasi SN dengan baris lain
+            $stDup = $pdo->prepare("SELECT id FROM material_serials WHERE serial_number = ? AND id != ? LIMIT 1");
+            $stDup->execute([$newSn, $serialId]);
+            if ($stDup->fetch()) {
+                throw new Exception("Serial Number '{$newSn}' sudah terdaftar pada unit lain.");
+            }
+
+            $pdo->beginTransaction();
+
+            $stmtUp = $pdo->prepare("UPDATE material_serials SET material_id = ?, serial_number = ?, mac_address = ? WHERE id = ?");
+            $stmtUp->execute([$materialId, $newSn, $newMac, $serialId]);
+
+            // Jika SN ini sedang terikat ke bon_items dan SN-nya berubah, sinkronkan teks SN di bon_items
+            if (!empty($oldRow['bon_id']) && $oldRow['serial_number'] !== $newSn) {
+                $stBi = $pdo->prepare("SELECT id, serial_numbers FROM bon_items WHERE bon_id = ?");
+                $stBi->execute([$oldRow['bon_id']]);
+                foreach ($stBi->fetchAll() as $bi) {
+                    if (!empty($bi['serial_numbers']) && stripos($bi['serial_numbers'], $oldRow['serial_number']) !== false) {
+                        $updatedSns = str_ireplace($oldRow['serial_number'], $newSn, $bi['serial_numbers']);
+                        $pdo->prepare("UPDATE bon_items SET serial_numbers = ? WHERE id = ?")->execute([$updatedSns, $bi['id']]);
+                    }
+                }
+            }
+
+            syncSerializedMaterialStock($pdo);
+            $pdo->commit();
+
+            $_SESSION['flash_message'] = [
+                'type' => 'success',
+                'title' => 'Data ONT Berhasil Diperbarui!',
+                'text' => "Serial Number '{$newSn}'" . ($newMac ? " (MAC: {$newMac})" : "") . " berhasil disimpan."
+            ];
+            header("Location: ../stok.php?tab=ont");
+            exit;
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash_message'] = [
+                'type' => 'error',
+                'title' => 'Gagal Mengubah Data ONT',
+                'text' => $e->getMessage()
+            ];
+            header("Location: ../stok.php?tab=ont");
+            exit;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. HAPUS SERIAL NUMBER ONT DARI STOK GUDANG (Jika Salah Input)
+    // ---------------------------------------------------------
+    if ($action === 'delete_sn') {
+        try {
+            $serialId = (int)($_POST['serial_id'] ?? 0);
+            if ($serialId <= 0) {
+                throw new Exception("ID Serial Number tidak valid.");
+            }
+
+            $stOld = $pdo->prepare("SELECT ms.*, m.name as mat_name, m.stock_current FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE ms.id = ?");
+            $stOld->execute([$serialId]);
+            $oldRow = $stOld->fetch();
+            if (!$oldRow) {
+                throw new Exception("Data Serial Number tidak ditemukan.");
+            }
+
+            if ($oldRow['status'] !== 'available') {
+                throw new Exception("Hanya unit ONT berstatus 'Stok Gudang' yang dapat dihapus langsung. Jika unit sedang dibawa teknisi, kembalikan ke gudang terlebih dahulu dari menu Surat Bon.");
+            }
+
+            $pdo->beginTransaction();
+
+            $stockBefore = (int)$oldRow['stock_current'];
+            $pdo->prepare("DELETE FROM material_serials WHERE id = ?")->execute([$serialId]);
+
+            syncSerializedMaterialStock($pdo);
+
+            $stRecount = $pdo->prepare("SELECT stock_current FROM materials WHERE id = ?");
+            $stRecount->execute([$oldRow['material_id']]);
+            $stockAfter = (int)$stRecount->fetchColumn();
+
+            $pdo->prepare("
+                INSERT INTO stock_mutations (material_id, mutation_type, quantity, stock_before, stock_after, reference_type, reference_id, user_id, notes, created_at)
+                VALUES (?, 'adjustment', 1, ?, ?, 'delete_sn', ?, ?, ?, CURRENT_TIMESTAMP)
+            ")->execute([
+                $oldRow['material_id'],
+                $stockBefore,
+                $stockAfter,
+                'DEL-SN-' . $serialId,
+                $currentUser['id'],
+                "Penghapusan/koreksi Serial Number ONT: {$oldRow['serial_number']}"
+            ]);
+
+            $pdo->commit();
+
+            $_SESSION['flash_message'] = [
+                'type' => 'success',
+                'title' => 'Serial Number Berhasil Dihapus!',
+                'text' => "SN: {$oldRow['serial_number']} ({$oldRow['mat_name']}) telah dihapus dari Stok Gudang."
+            ];
+            header("Location: ../stok.php?tab=ont");
+            exit;
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash_message'] = [
+                'type' => 'error',
+                'title' => 'Gagal Menghapus Serial Number',
+                'text' => $e->getMessage()
+            ];
+            header("Location: ../stok.php?tab=ont");
+            exit;
+        }
+    }
 }
 
 header("Location: ../stok.php");

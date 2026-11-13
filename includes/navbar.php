@@ -106,6 +106,14 @@ $myActiveBonCount = $isTeknisi ? (int)$pdo->query("SELECT COUNT(*) FROM bon_requ
 
         <div class="dropdown-divider"></div>
 
+        <a href="javascript:void(0)" onclick="openChangeOwnPasswordModal()" class="switch-user-item" style="color: var(--text-main);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-key-fill text-warning"></i>
+            <span>Ubah Password Saya</span>
+          </div>
+        </a>
+        <div class="dropdown-divider"></div>
+
         <?php if ($isAdmin): ?>
           <a href="pengguna.php" class="switch-user-item" style="color: var(--text-main);">
             <div style="display: flex; align-items: center; gap: 8px;">

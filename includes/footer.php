@@ -845,6 +845,77 @@ window.triggerUniversalScanner = function() {
 };
 </script>
 
+<!-- =========================================================================
+     MODAL: UBAH PASSWORD SAYA (UNTUK SEMUA USER: TEKNISI & ADMIN)
+     ========================================================================= -->
+<div class="modal-backdrop" id="changeOwnPasswordModal">
+  <div class="modal-dialog" style="max-width: 440px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="bi bi-key-fill text-warning me-1"></i> Ubah Password Akun Saya
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeChangeOwnPasswordModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form method="POST" action="api/user_action.php">
+      <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+      <input type="hidden" name="action" value="change_own_password">
+
+      <div class="modal-body">
+        <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.8rem; color: var(--text-main);">
+          <i class="bi bi-person-badge text-primary me-1"></i>
+          Akun: <strong><?= htmlspecialchars($currentUser['name'] ?? '') ?></strong>
+          (<span class="font-mono"><?= htmlspecialchars($currentUser['nik'] ?? '') ?></span>)
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password Lama *</label>
+          <input type="password" name="old_password" class="form-control" placeholder="Masukkan password saat ini" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password Baru *</label>
+          <input type="password" name="new_password" class="form-control" placeholder="Minimal 4 karakter" minlength="4" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Ulangi Password Baru *</label>
+          <input type="password" name="confirm_password" class="form-control" placeholder="Ketik ulang password baru" minlength="4" required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeChangeOwnPasswordModal()">Batal</button>
+        <button type="submit" class="btn-primary">
+          <i class="bi bi-check2-circle me-1"></i> Simpan Password Baru
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+window.openChangeOwnPasswordModal = function() {
+  const dropdown = document.getElementById('userDropdownMenu');
+  if (dropdown) dropdown.classList.remove('show');
+  const modal = document.getElementById('changeOwnPasswordModal');
+  if (modal) {
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+};
+
+window.closeChangeOwnPasswordModal = function() {
+  const modal = document.getElementById('changeOwnPasswordModal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+  }
+};
+</script>
+
 <!-- Core JavaScript -->
 <script src="assets/js/app.js?v=<?= time() ?>"></script>
 </body>

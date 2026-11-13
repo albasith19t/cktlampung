@@ -309,12 +309,13 @@ if ($activeTab === 'mutasi') {
                 <th>Serial Number (SN) & MAC</th>
                 <th>Merek & Tipe ONT</th>
                 <th>Status & Lokasi Unit</th>
+                <th style="text-align: right; width: 120px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($ontList)): ?>
                 <tr>
-                  <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
                     <i class="bi bi-search" style="font-size: 2.2rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
                     Tidak ada Serial Number ONT yang cocok dengan pencarian / filter Anda.
                   </td>
@@ -392,6 +393,28 @@ if ($activeTab === 'mutasi') {
                           <?= htmlspecialchars(ucfirst($sn['status'])) ?>
                         </span>
                       <?php endif; ?>
+                    </td>
+                    <td data-label="Aksi" style="text-align: right;">
+                      <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                        <button 
+                          type="button" 
+                          class="btn-icon-action" 
+                          title="Edit SN / MAC / Tipe ONT"
+                          onclick="openEditOntModal(<?= (int)$sn['id'] ?>, <?= (int)$sn['material_id'] ?>, '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['mac_address'] ?? '', ENT_QUOTES) ?>')"
+                        >
+                          <i class="bi bi-pencil-square text-primary"></i>
+                        </button>
+                        <?php if ($isGudang): ?>
+                          <button 
+                            type="button" 
+                            class="btn-icon-action" 
+                            title="Hapus SN dari Stok Gudang"
+                            onclick="confirmDeleteOntSn(<?= (int)$sn['id'] ?>, '<?= htmlspecialchars($sn['serial_number'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sn['material_name'], ENT_QUOTES) ?>')"
+                          >
+                            <i class="bi bi-trash text-danger"></i>
+                          </button>
+                        <?php endif; ?>
+                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -949,19 +972,122 @@ function closeRmaModal() {
   modal.classList.remove('show');
 }
 
+function openEditOntModal(serialId, materialId, sn, mac) {
+  document.getElementById('editOntSerialId').value = serialId;
+  document.getElementById('editOntMaterialId').value = materialId;
+  document.getElementById('editOntSnInput').value = sn || '';
+  document.getElementById('editOntMacInput').value = mac || '';
+  const modal = document.getElementById('editOntModal');
+  if (modal) modal.classList.add('show');
+}
+
+function closeEditOntModal() {
+  const modal = document.getElementById('editOntModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function confirmDeleteOntSn(serialId, sn, matName) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Hapus Serial Number Ini?',
+    html: `Anda yakin ingin menghapus <strong>${matName}</strong> dengan SN <code style="font-weight:800;color:#ef4444;">${sn}</code> dari Stok Gudang?`,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-trash me-1"></i> Ya, Hapus SN',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#ef4444'
+  }).then((res) => {
+    if (res.isConfirmed) {
+      document.getElementById('deleteOntSerialId').value = serialId;
+      document.getElementById('formDeleteOntSn').submit();
+    }
+  });
+}
+
 window.addEventListener('click', function(e) {
   const addModal = document.getElementById('addOntModal');
   const rmaModal = document.getElementById('rmaModal');
+  const editModal = document.getElementById('editOntModal');
   if (e.target === addModal) closeAddOntModal();
   if (e.target === rmaModal) closeRmaModal();
+  if (e.target === editModal) closeEditOntModal();
 });
 
 window.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeAddOntModal();
     closeRmaModal();
+    closeEditOntModal();
   }
 });
 </script>
+
+<!-- =========================================================================
+     MODAL: EDIT SERIAL NUMBER, MAC ADDRESS & TIPE ONT
+     ========================================================================= -->
+<div class="modal-backdrop" id="editOntModal">
+  <div class="modal-dialog" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="bi bi-pencil-square text-primary me-1"></i> Edit Data Serial Number ONT
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeEditOntModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form method="POST" action="api/stok_action.php">
+      <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+      <input type="hidden" name="action" value="edit_sn">
+      <input type="hidden" name="serial_id" id="editOntSerialId">
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Tipe / Varian ONT *</label>
+          <select name="material_id" id="editOntMaterialId" class="form-select" required>
+            <?php foreach ($serializedMaterials as $sm): ?>
+              <option value="<?= $sm['id'] ?>">
+                <?= htmlspecialchars($sm['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">Serial Number (SN) *</label>
+            <button type="button" class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openBarcodeScanner((val) => { document.getElementById('editOntSnInput').value = val.toUpperCase(); })">
+              <i class="bi bi-camera me-1"></i> Scan SN
+            </button>
+          </div>
+          <input type="text" name="serial_number" id="editOntSnInput" class="form-control font-mono" style="text-transform: uppercase; font-weight: 700;" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">MAC Address (Opsional)</label>
+            <button type="button" class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openBarcodeScanner((val) => { document.getElementById('editOntMacInput').value = val.toUpperCase(); })">
+              <i class="bi bi-camera me-1"></i> Scan MAC
+            </button>
+          </div>
+          <input type="text" name="mac_address" id="editOntMacInput" class="form-control font-mono" style="text-transform: uppercase;" placeholder="Contoh: 74:91:1A:BC:89:67">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeEditOntModal()">Batal</button>
+        <button type="submit" class="btn-primary">
+          <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hidden Form for Deleting ONT SN -->
+<form method="POST" action="api/stok_action.php" id="formDeleteOntSn" style="display: none;">
+  <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+  <input type="hidden" name="action" value="delete_sn">
+  <input type="hidden" name="serial_id" id="deleteOntSerialId">
+</form>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

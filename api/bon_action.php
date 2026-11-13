@@ -561,6 +561,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmtUpdateBon = $pdo->prepare("UPDATE bon_requests SET status = 'cancelled', admin_notes = ? WHERE id = ?");
                 $stmtUpdateBon->execute([$cancelReason, $bonId]);
+                syncSerializedMaterialStock($pdo);
             }
 
             $pdo->commit();
@@ -580,6 +581,196 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'text' => $e->getMessage()
             ];
             header("Location: ../bon.php");
+            exit;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 5. RETURN UNUSED ONT SERIAL NUMBER TO GUDANG (Retur Unit ONT Sisa Teknisi)
+    // ---------------------------------------------------------
+    if ($action === 'return_sn') {
+        $bonId = (int)($_POST['bon_id'] ?? 0);
+        try {
+            $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
+            if (!$isAdmin) {
+                throw new Exception("Hanya Admin Gudang yang dapat memproses pengembalian (retur) unit ke gudang.");
+            }
+
+            $materialId = (int)($_POST['material_id'] ?? 0);
+            $serialNumber = trim($_POST['serial_number'] ?? '');
+
+            if ($bonId <= 0 || $materialId <= 0 || empty($serialNumber)) {
+                throw new Exception("Data pengembalian ONT tidak lengkap.");
+            }
+
+            $pdo->beginTransaction();
+
+            $stBon = $pdo->prepare("SELECT * FROM bon_requests WHERE id = ?");
+            $stBon->execute([$bonId]);
+            $bon = $stBon->fetch();
+            if (!$bon) {
+                throw new Exception("Data Surat Bon tidak ditemukan.");
+            }
+
+            // 1. Kembalikan status di material_serials ke 'available' (Stok Gudang)
+            $stUpSn = $pdo->prepare("UPDATE material_serials SET status = 'available', bon_id = NULL WHERE serial_number = ?");
+            $stUpSn->execute([$serialNumber]);
+
+            // 2. Kurangi qty dan hapus SN dari bon_items
+            $stItem = $pdo->prepare("SELECT * FROM bon_items WHERE bon_id = ? AND material_id = ? LIMIT 1");
+            $stItem->execute([$bonId, $materialId]);
+            $bonItem = $stItem->fetch();
+
+            if ($bonItem) {
+                $currQty = (int)($bonItem['quantity_approved'] > 0 ? $bonItem['quantity_approved'] : $bonItem['quantity_requested']);
+                $newQty = max(0, $currQty - 1);
+
+                $snList = array_filter(array_map('trim', preg_split('/[\r\n,]+/', $bonItem['serial_numbers'] ?? '')));
+                $filteredSns = array_values(array_filter($snList, function($s) use ($serialNumber) {
+                    return strcasecmp($s, $serialNumber) !== 0;
+                }));
+                $newSnText = !empty($filteredSns) ? implode(', ', $filteredSns) : null;
+
+                if ($newQty <= 0) {
+                    $pdo->prepare("DELETE FROM bon_items WHERE id = ?")->execute([$bonItem['id']]);
+                } else {
+                    $pdo->prepare("UPDATE bon_items SET quantity_requested = ?, quantity_approved = ?, serial_numbers = ? WHERE id = ?")
+                        ->execute([$newQty, $newQty, $newSnText, $bonItem['id']]);
+                }
+            }
+
+            // 3. Kembalikan stok material & catat mutasi
+            $stMat = $pdo->prepare("SELECT stock_current FROM materials WHERE id = ?");
+            $stMat->execute([$materialId]);
+            $stockBefore = (int)$stMat->fetchColumn();
+
+            $pdo->prepare("UPDATE materials SET stock_current = stock_current + 1 WHERE id = ?")->execute([$materialId]);
+            syncSerializedMaterialStock($pdo);
+
+            $stMat->execute([$materialId]);
+            $stockAfter = (int)$stMat->fetchColumn();
+
+            $pdo->prepare("
+                INSERT INTO stock_mutations (material_id, mutation_type, quantity, stock_before, stock_after, reference_type, reference_id, user_id, notes, created_at)
+                VALUES (?, 'return', 1, ?, ?, 'bon_return', ?, ?, ?, CURRENT_TIMESTAMP)
+            ")->execute([
+                $materialId,
+                $stockBefore,
+                $stockAfter,
+                $bon['bon_number'],
+                $currentUser['id'],
+                "Retur unit ONT (SN: {$serialNumber}) dari Bon {$bon['bon_number']} kembali ke Stok Gudang"
+            ]);
+
+            syncBonCompletionStatus($pdo, $bonId);
+            $pdo->commit();
+
+            $_SESSION['flash_message'] = [
+                'type' => 'success',
+                'title' => 'Unit ONT Dikembalikan ke Gudang!',
+                'text' => "SN: {$serialNumber} telah dikembalikan dari Bon {$bon['bon_number']} ke Stok Gudang."
+            ];
+            header("Location: ../bon.php?id=" . $bonId);
+            exit;
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash_message'] = [
+                'type' => 'error',
+                'title' => 'Gagal Retur Unit ONT',
+                'text' => $e->getMessage()
+            ];
+            header("Location: ../bon.php" . ($bonId > 0 ? "?id=" . $bonId : ""));
+            exit;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 6. RETURN UNUSED CABLE ROLL TO GUDANG (Retur Sisa Kabel Teknisi)
+    // ---------------------------------------------------------
+    if ($action === 'return_cable') {
+        $bonId = (int)($_POST['bon_id'] ?? 0);
+        try {
+            $isAdmin = in_array($currentUser['role'] ?? '', ['admin_gudang', 'admin']);
+            if (!$isAdmin) {
+                throw new Exception("Hanya Admin Gudang yang dapat memproses pengembalian (retur) kabel ke gudang.");
+            }
+
+            $materialId = (int)($_POST['material_id'] ?? 0);
+            $returnQty = max(1, (int)($_POST['return_qty'] ?? 1));
+
+            if ($bonId <= 0 || $materialId <= 0) {
+                throw new Exception("Data pengembalian kabel tidak valid.");
+            }
+
+            $pdo->beginTransaction();
+
+            $stBon = $pdo->prepare("SELECT * FROM bon_requests WHERE id = ?");
+            $stBon->execute([$bonId]);
+            $bon = $stBon->fetch();
+            if (!$bon) {
+                throw new Exception("Data Surat Bon tidak ditemukan.");
+            }
+
+            $stItem = $pdo->prepare("SELECT * FROM bon_items WHERE bon_id = ? AND material_id = ? LIMIT 1");
+            $stItem->execute([$bonId, $materialId]);
+            $bonItem = $stItem->fetch();
+            if (!$bonItem) {
+                throw new Exception("Item kabel tidak ditemukan pada surat bon ini.");
+            }
+
+            $currQty = (int)($bonItem['quantity_approved'] > 0 ? $bonItem['quantity_approved'] : $bonItem['quantity_requested']);
+            if ($returnQty > $currQty) {
+                $returnQty = $currQty;
+            }
+            $newQty = max(0, $currQty - $returnQty);
+
+            if ($newQty <= 0) {
+                $pdo->prepare("DELETE FROM bon_items WHERE id = ?")->execute([$bonItem['id']]);
+            } else {
+                $pdo->prepare("UPDATE bon_items SET quantity_requested = ?, quantity_approved = ? WHERE id = ?")
+                    ->execute([$newQty, $newQty, $bonItem['id']]);
+            }
+
+            $stMat = $pdo->prepare("SELECT name, unit, stock_current FROM materials WHERE id = ?");
+            $stMat->execute([$materialId]);
+            $mat = $stMat->fetch();
+            $stockBefore = (int)($mat['stock_current'] ?? 0);
+            $stockAfter = $stockBefore + $returnQty;
+
+            $pdo->prepare("UPDATE materials SET stock_current = stock_current + ? WHERE id = ?")
+                ->execute([$returnQty, $materialId]);
+
+            $pdo->prepare("
+                INSERT INTO stock_mutations (material_id, mutation_type, quantity, stock_before, stock_after, reference_type, reference_id, user_id, notes, created_at)
+                VALUES (?, 'return', ?, ?, ?, 'bon_return', ?, ?, ?, CURRENT_TIMESTAMP)
+            ")->execute([
+                $materialId,
+                $returnQty,
+                $stockBefore,
+                $stockAfter,
+                $bon['bon_number'],
+                $currentUser['id'],
+                "Retur sisa {$returnQty} {$mat['unit']} {$mat['name']} dari Bon {$bon['bon_number']} kembali ke Stok Gudang"
+            ]);
+
+            syncBonCompletionStatus($pdo, $bonId);
+            $pdo->commit();
+
+            $_SESSION['flash_message'] = [
+                'type' => 'success',
+                'title' => 'Kabel Dikembalikan ke Gudang!',
+                'text' => "Berhasil mengembalikan {$returnQty} {$mat['unit']} '{$mat['name']}' ke Stok Gudang."
+            ];
+            header("Location: ../bon.php?id=" . $bonId);
+            exit;
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $_SESSION['flash_message'] = [
+                'type' => 'error',
+                'title' => 'Gagal Retur Kabel',
+                'text' => $e->getMessage()
+            ];
+            header("Location: ../bon.php" . ($bonId > 0 ? "?id=" . $bonId : ""));
             exit;
         }
     }
