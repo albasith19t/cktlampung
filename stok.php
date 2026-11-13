@@ -42,7 +42,7 @@ $cableSearch = trim($_GET['cable_search'] ?? '');
 $cableFilter = trim($_GET['cable_filter'] ?? '');
 
 // ---------------------------------------------------------
-// 1. QUERY STOK ONT (TAB 1)
+// 1. QUERY STOK ONT (TAB 1) - Hanya tampilkan stok aktif (bukan yang sudah Selesai/installed)
 // ---------------------------------------------------------
 $ontSql = "
     SELECT ms.*, 
@@ -59,7 +59,7 @@ $ontSql = "
     JOIN materials m ON ms.material_id = m.id
     LEFT JOIN bon_requests b ON ms.bon_id = b.id
     LEFT JOIN users u ON b.user_id = u.id
-    WHERE 1=1
+    WHERE ms.status != 'installed'
 ";
 $ontParams = [];
 
@@ -73,8 +73,6 @@ if (!empty($ontStatusFilter)) {
         $ontSql .= " AND ms.status = 'available'";
     } elseif ($ontStatusFilter === 'teknisi') {
         $ontSql .= " AND (ms.status = 'allocated' OR (ms.bon_id IS NOT NULL AND ms.status != 'installed' AND ms.status != 'bad'))";
-    } elseif ($ontStatusFilter === 'installed') {
-        $ontSql .= " AND ms.status = 'installed'";
     } elseif ($ontStatusFilter === 'bad') {
         $ontSql .= " AND ms.status = 'bad'";
     } else {
@@ -96,7 +94,7 @@ $ontCountSql = "SELECT COUNT(*) FROM material_serials ms
     JOIN materials m ON ms.material_id = m.id
     LEFT JOIN bon_requests b ON ms.bon_id = b.id
     LEFT JOIN users u ON b.user_id = u.id
-    WHERE 1=1";
+    WHERE ms.status != 'installed'";
 // Rebuild conditions for count (reuse ontParams)
 $ontCountWhere = '';
 if ($ontMaterialId > 0) {
@@ -107,8 +105,6 @@ if (!empty($ontStatusFilter)) {
         $ontCountWhere .= " AND ms.status = 'available'";
     } elseif ($ontStatusFilter === 'teknisi') {
         $ontCountWhere .= " AND (ms.status = 'allocated' OR (ms.bon_id IS NOT NULL AND ms.status != 'installed' AND ms.status != 'bad'))";
-    } elseif ($ontStatusFilter === 'installed') {
-        $ontCountWhere .= " AND ms.status = 'installed'";
     } elseif ($ontStatusFilter === 'bad') {
         $ontCountWhere .= " AND ms.status = 'bad'";
     } else {
@@ -135,13 +131,12 @@ $ontList = $stmtOnt->fetchAll();
 // Pastikan stok ONT di tabel materials selalu sinkron dengan jumlah Serial Number 'available' di gudang
 syncSerializedMaterialStock($pdo);
 
-// KPI Stats ONT
-$totalOntAll = (int)$pdo->query("SELECT COUNT(*) FROM material_serials")->fetchColumn();
+// KPI Stats ONT (Hanya stok aktif, tidak termasuk yang sudah Selesai/installed)
+$totalOntAll = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status != 'installed'")->fetchColumn();
 $totalOntGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'available'")->fetchColumn();
 $ontBesarGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE m.code = 'MAT-ONT-BSR' AND ms.status = 'available'")->fetchColumn();
 $ontKecilGudang = (int)$pdo->query("SELECT COUNT(*) FROM material_serials ms JOIN materials m ON ms.material_id = m.id WHERE m.code = 'MAT-ONT-KCL' AND ms.status = 'available'")->fetchColumn();
 $totalOntTeknisi = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'allocated' OR (bon_id IS NOT NULL AND status != 'installed' AND status != 'bad')")->fetchColumn();
-$totalOntInstalled = (int)$pdo->query("SELECT COUNT(*) FROM material_serials WHERE status = 'installed'")->fetchColumn();
 
 // ONT Materials for Dropdown
 $serializedMaterials = $pdo->query("SELECT id, code, name, brand FROM materials WHERE is_serialized = 1 ORDER BY name ASC")->fetchAll();
@@ -227,7 +222,7 @@ if ($activeTab === 'mutasi') {
     <?php if ($activeTab === 'ont'): ?>
 
       <!-- Ringkasan Stok ONT Real-Time (Sinkron dengan Dashboard) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
         <a href="stok.php?tab=ont&status=gudang" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === 'gudang') ? '#10b981' : 'var(--border-color)' ?>; border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📦 Stok Gudang Tersedia</div>
           <div style="font-size: 1.45rem; font-weight: 800; color: #10b981; font-family: var(--font-mono);"><?= $totalOntGudang ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
@@ -240,16 +235,10 @@ if ($activeTab === 'mutasi') {
           <div style="font-size: 0.76rem; color: var(--text-dim);">Sedang dibawa di lapangan</div>
         </a>
 
-        <a href="stok.php?tab=ont&status=installed" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === 'installed') ? 'var(--primary)' : 'var(--border-color)' ?>; border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
-          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🏠 Selesai Terpasang</div>
-          <div style="font-size: 1.45rem; font-weight: 800; color: var(--primary); font-family: var(--font-mono);"><?= $totalOntInstalled ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div style="font-size: 0.76rem; color: var(--text-dim);">Sudah terpasang di pelanggan</div>
-        </a>
-
         <a href="stok.php?tab=ont" style="text-decoration: none; background: #ffffff; border: 1px solid <?= ($ontStatusFilter === '') ? '#64748b' : 'var(--border-color)' ?>; border-left: 4px solid #64748b; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px;">
-          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📋 Total SN Tercatat</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📋 Total Unit Aktif</div>
           <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mono);"><?= $totalOntAll ?> <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Unit</span></div>
-          <div style="font-size: 0.76rem; color: var(--text-dim);">Seluruh riwayat unit ONT</div>
+          <div style="font-size: 0.76rem; color: var(--text-dim);">Gudang + Dibawa Teknisi</div>
         </a>
       </div>
 
@@ -260,7 +249,7 @@ if ($activeTab === 'mutasi') {
           <input type="hidden" name="tab" value="ont">
           
           <div style="flex: 1; min-width: 240px; position: relative;">
-            <input type="text" name="sn" class="form-control font-mono" placeholder="Cari SN ZTE/Huawei, MAC, Teknisi, No Bon, Pelanggan..." value="<?= htmlspecialchars($snSearch) ?>" style="padding-left: 36px;">
+            <input type="text" name="sn" class="form-control font-mono" placeholder="Cari SN ZTE/Huawei, MAC, Teknisi, No Bon..." value="<?= htmlspecialchars($snSearch) ?>" style="padding-left: 36px;">
             <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
           </div>
 
@@ -269,7 +258,6 @@ if ($activeTab === 'mutasi') {
               <option value="">-- Semua Status Lokasi --</option>
               <option value="gudang" <?= ($ontStatusFilter === 'gudang') ? 'selected' : '' ?>>📦 Stok Gudang</option>
               <option value="teknisi" <?= ($ontStatusFilter === 'teknisi') ? 'selected' : '' ?>>🚚 Di Teknisi</option>
-              <option value="installed" <?= ($ontStatusFilter === 'installed') ? 'selected' : '' ?>>🏠 Selesai</option>
               <option value="bad" <?= ($ontStatusFilter === 'bad') ? 'selected' : '' ?>>⚠️ Unit Rusak / Bad</option>
             </select>
           </div>
